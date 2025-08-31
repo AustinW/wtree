@@ -1,0 +1,174 @@
+# GoReleaser configuration for WTree
+# See https://goreleaser.com for documentation
+
+version: 1
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - "386"
+      - amd64
+      - arm64
+    goarm:
+      - "7"
+    ignore:
+      - goos: windows
+        goarch: "386"
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X github.com/awhite/wtree/cmd.version={{.Version}}
+      - -X github.com/awhite/wtree/cmd.commit={{.Commit}}
+      - -X github.com/awhite/wtree/cmd.date={{.Date}}
+    binary: wtree
+
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of uname.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    # use zip for windows archives
+    format_overrides:
+    - goos: windows
+      format: zip
+    files:
+      - README.md
+      - LICENSE
+      - CONTRIBUTING.md
+      - CHANGELOG.md
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "merge conflict"
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: Others
+      order: 999
+
+# Homebrew tap repository info
+brews:
+  - name: wtree
+    repository:
+      owner: awhite
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    url_template: "https://github.com/awhite/wtree/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    folder: Formula
+    homepage: "https://github.com/awhite/wtree"
+    description: "Git worktree management tool with advanced UX features"
+    license: "MIT"
+    test: |
+      system "#{bin}/wtree --version"
+    install: |-
+      bin.install "wtree"
+      bash_completion.install "completions/wtree.bash" => "wtree"
+      zsh_completion.install "completions/_wtree" => "_wtree"
+      fish_completion.install "completions/wtree.fish"
+
+# Windows Package Manager
+winget:
+  - name: wtree
+    publisher: awhite
+    short_description: "Git worktree management tool"
+    license: "MIT"
+    homepage: "https://github.com/awhite/wtree"
+    repository:
+      owner: awhite
+      name: winget-pkgs
+      branch: "wtree-{{.Version}}"
+      token: "{{ .Env.WINGET_GITHUB_TOKEN }}"
+      pull_request:
+        enabled: true
+        draft: true
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
+
+# Scoop bucket (Windows package manager)
+scoops:
+  - repository:
+      owner: awhite
+      name: scoop-bucket
+      branch: main
+      token: "{{ .Env.SCOOP_GITHUB_TOKEN }}"
+    url_template: "https://github.com/awhite/wtree/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    folder: bucket
+    homepage: "https://github.com/awhite/wtree"
+    description: "Git worktree management tool with advanced UX features"
+    license: MIT
+
+release:
+  github:
+    owner: awhite
+    name: wtree
+  discussion_category_name: General
+  prerelease: auto
+  mode: replace
+  header: |
+    ## WTree {{.Tag}}
+
+    **Git worktree management made easy!**
+
+    ### Installation
+
+    #### Homebrew (macOS/Linux)
+    ```bash
+    brew install awhite/tap/wtree
+    ```
+
+    #### Go Install
+    ```bash
+    go install github.com/awhite/wtree@{{.Tag}}
+    ```
+
+    #### Download Binary
+    Download the appropriate binary for your platform from the assets below.
+
+  footer: |
+    **Full Changelog**: https://github.com/awhite/wtree/compare/{{.PreviousTag}}...{{.Tag}}
+
+    ---
+    
+    **Happy coding with WTree! 🌳**
+
+# Generate shell completions
+extra_files:
+  - glob: ./completions/*
