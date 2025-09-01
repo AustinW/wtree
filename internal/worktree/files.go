@@ -240,14 +240,14 @@ func (fm *FileManager) copyFile(src, dst string) error {
 		return fmt.Errorf("failed to create destination file %s: %w", dst, err)
 	}
 	
-	// Ensure proper cleanup on error
-	var copyErr error
+	// Track if operation completed successfully
+	var success bool
 	defer func() {
 		if closeErr := dstFile.Close(); closeErr != nil {
 			log.Printf("Warning: Failed to close destination file %s: %v", dst, closeErr)
 		}
-		// If copy failed, clean up the partial destination file
-		if copyErr != nil {
+		// If operation failed, clean up the partial destination file
+		if !success {
 			if removeErr := os.Remove(dst); removeErr != nil {
 				log.Printf("Warning: Failed to remove partial destination file %s: %v", dst, removeErr)
 			}
@@ -255,14 +255,13 @@ func (fm *FileManager) copyFile(src, dst string) error {
 	}()
 
 	// Copy content
-	if _, copyErr = io.Copy(dstFile, srcFile); copyErr != nil {
-		return fmt.Errorf("failed to copy file content: %w", copyErr)
+	if _, err := io.Copy(dstFile, srcFile); err != nil {
+		return fmt.Errorf("failed to copy file content: %w", err)
 	}
 
 	// Sync to ensure data is written
-	if syncErr := dstFile.Sync(); syncErr != nil {
-		copyErr = syncErr
-		return fmt.Errorf("failed to sync destination file: %w", syncErr)
+	if err := dstFile.Sync(); err != nil {
+		return fmt.Errorf("failed to sync destination file: %w", err)
 	}
 
 	// Copy permissions
@@ -271,6 +270,7 @@ func (fm *FileManager) copyFile(src, dst string) error {
 		// Don't treat permission copy failure as fatal
 	}
 
+	success = true // Mark operation as successful
 	log.Printf("Successfully copied file: %s -> %s", src, dst)
 	return nil
 }
