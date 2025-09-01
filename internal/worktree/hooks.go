@@ -228,14 +228,17 @@ func (he *HookExecutor) checkDangerousPatterns(normalizedCmd string) error {
 		pattern     *regexp.Regexp
 		description string
 	}{
-		{regexp.MustCompile(`\brm\s+-.*(r.*f|f.*r).*\s+(/|~)`), "recursive delete of root or home filesystem"},
-		{regexp.MustCompile(`\brm\s+(-[a-z]*[rf]+[a-z]*\s+)?\*\b`), "recursive delete with wildcards"},
+		// Match rm commands targeting root or home - simplified patterns
+		{regexp.MustCompile(`\brm\s+[^;|&]*-[a-z]*r[a-z]*\s+[^;|&]*(/|~)`), "recursive delete of root or home filesystem"},
+		{regexp.MustCompile(`\brm\s+[^;|&]*-[a-z]*f[a-z]*\s+[^;|&]*(/|~)`), "force delete of root or home filesystem"},
+		{regexp.MustCompile(`\brm\s+[^;|&]*(/|~)\s+[^;|&]*-[a-z]*[rf][a-z]*`), "recursive delete of root or home filesystem"},
+		{regexp.MustCompile(`\brm\s+[^;|&]*-[a-z]*[rf]+[a-z]*[^;|&]*\*`), "recursive delete with wildcards"},
 		{regexp.MustCompile(`:\(\)\s*\{\s*:\|\:&\s*\}`), "fork bomb pattern"},
 		{regexp.MustCompile(`\bdd\s+if=/dev/(zero|random|urandom)`), "dangerous dd operations"},
 		{regexp.MustCompile(`\bchmod\s+777\s+/`), "dangerous permission changes on root"},
 		{regexp.MustCompile(`\b(mkfs|format)(\.|[\s]+)`), "filesystem formatting commands"},
 		{regexp.MustCompile(`\bmount\s.*--bind.*/(proc|sys|dev)`), "dangerous mount operations"},
-		{regexp.MustCompile(`\biptables\s+-F`), "firewall rule flushing"},
+		{regexp.MustCompile(`\biptables\s+-f\b`), "firewall rule flushing"},
 		{regexp.MustCompile(`\b(shutdown|halt|reboot|init\s+0)\b`), "system shutdown commands"},
 	}
 
