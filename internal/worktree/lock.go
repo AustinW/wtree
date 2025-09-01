@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -296,8 +297,9 @@ func getLockDirectory() (string, error) {
 
 // extractPIDFromLockInfo extracts the PID from lock file content
 func extractPIDFromLockInfo(lockInfo string) int {
-	lines := []byte(lockInfo)
-	for _, line := range []string{string(lines)} {
+	// Split by lines to properly parse multi-line lock info
+	lines := strings.Split(lockInfo, "\n")
+	for _, line := range lines {
 		if len(line) > 4 && line[:4] == "pid=" {
 			if pid, err := strconv.Atoi(line[4:]); err == nil {
 				return pid
