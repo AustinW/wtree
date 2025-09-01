@@ -11,7 +11,7 @@ import (
 func TestHookExecutor_expandCommand(t *testing.T) {
 	config := &types.ProjectConfig{}
 	executor := NewHookExecutor(config, 30*time.Second, false)
-	
+
 	ctx := types.HookContext{
 		Branch:       "feature-branch",
 		RepoPath:     "/path/to/repo",
@@ -118,11 +118,11 @@ func TestHookExecutor_buildEnvironment(t *testing.T) {
 
 	// Check that our environment variables are present
 	expectedVars := map[string]string{
-		"WTREE_EVENT":        "post_create",
-		"WTREE_BRANCH":       "test-branch",
-		"WTREE_REPO_PATH":    "/repo",
+		"WTREE_EVENT":         "post_create",
+		"WTREE_BRANCH":        "test-branch",
+		"WTREE_REPO_PATH":     "/repo",
 		"WTREE_WORKTREE_PATH": "/worktree",
-		"CUSTOM_VAR":         "custom_value",
+		"CUSTOM_VAR":          "custom_value",
 	}
 
 	for expectedKey, expectedValue := range expectedVars {

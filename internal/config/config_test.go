@@ -42,14 +42,14 @@ hooks:
 			},
 		},
 		{
-			name: "default config when no file",
-			configData: "",
+			name:        "default config when no file",
+			configData:  "",
 			expectError: false,
-			expected: types.DefaultProjectConfig(),
+			expected:    types.DefaultProjectConfig(),
 		},
 		{
-			name: "invalid yaml",
-			configData: "invalid: yaml: content:",
+			name:        "invalid yaml",
+			configData:  "invalid: yaml: content:",
 			expectError: true,
 		},
 	}
@@ -57,9 +57,13 @@ hooks:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temp directory
-			tmpDir, err := os.MkdirTemp("", "wtree-test")
-			require.NoError(t, err)
-			defer os.RemoveAll(tmpDir)
+					tmpDir, err := os.MkdirTemp("", "wtree-test")
+		require.NoError(t, err)
+		defer func() {
+			if err := os.RemoveAll(tmpDir); err != nil {
+				t.Logf("Warning: failed to clean up temp dir: %v", err)
+			}
+		}()
 
 			// Create .wtreerc if config data provided
 			if tt.configData != "" && tt.name != "default config when no file" {
@@ -89,7 +93,7 @@ hooks:
 
 func TestManager_validateProjectConfig(t *testing.T) {
 	manager := NewManager()
-	
+
 	tests := []struct {
 		name        string
 		config      *types.ProjectConfig
@@ -98,7 +102,7 @@ func TestManager_validateProjectConfig(t *testing.T) {
 		{
 			name: "valid config",
 			config: &types.ProjectConfig{
-				Version: "1.0",
+				Version:   "1.0",
 				CopyFiles: []string{"file.txt"},
 			},
 			expectError: false,
@@ -113,7 +117,7 @@ func TestManager_validateProjectConfig(t *testing.T) {
 		{
 			name: "absolute file path",
 			config: &types.ProjectConfig{
-				Version: "1.0",
+				Version:   "1.0",
 				CopyFiles: []string{"/absolute/path"},
 			},
 			expectError: true,
@@ -121,7 +125,7 @@ func TestManager_validateProjectConfig(t *testing.T) {
 		{
 			name: "path traversal with dots",
 			config: &types.ProjectConfig{
-				Version: "1.0",
+				Version:   "1.0",
 				CopyFiles: []string{"../../passwd"},
 			},
 			expectError: true,
@@ -142,7 +146,7 @@ func TestManager_validateProjectConfig(t *testing.T) {
 
 func TestManager_ResolveEditor(t *testing.T) {
 	manager := NewManager()
-	
+
 	tests := []struct {
 		name           string
 		globalConfig   *types.WTreeConfig
@@ -150,21 +154,21 @@ func TestManager_ResolveEditor(t *testing.T) {
 		expectedEditor string
 	}{
 		{
-			name: "project override",
-			globalConfig: &types.WTreeConfig{Editor: "vim"},
-			projectConfig: &types.ProjectConfig{Editor: "code"},
+			name:           "project override",
+			globalConfig:   &types.WTreeConfig{Editor: "vim"},
+			projectConfig:  &types.ProjectConfig{Editor: "code"},
 			expectedEditor: "code",
 		},
 		{
-			name: "global fallback",
-			globalConfig: &types.WTreeConfig{Editor: "vim"},
-			projectConfig: &types.ProjectConfig{},
+			name:           "global fallback",
+			globalConfig:   &types.WTreeConfig{Editor: "vim"},
+			projectConfig:  &types.ProjectConfig{},
 			expectedEditor: "vim",
 		},
 		{
-			name: "default fallback",
-			globalConfig: &types.WTreeConfig{},
-			projectConfig: nil,
+			name:           "default fallback",
+			globalConfig:   &types.WTreeConfig{},
+			projectConfig:  nil,
 			expectedEditor: "cursor",
 		},
 	}

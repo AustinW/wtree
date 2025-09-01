@@ -57,7 +57,7 @@ func (m *Manager) LoadProjectConfig(repoPath string) (*types.ProjectConfig, erro
 	defer m.mu.Unlock()
 
 	configPath := filepath.Join(repoPath, ".wtreerc")
-	
+
 	// Return default config if no .wtreerc exists
 	if !fileExists(configPath) {
 		return types.DefaultProjectConfig(), nil
@@ -132,15 +132,15 @@ func (m *Manager) validateGlobalConfig(config *types.WTreeConfig) error {
 func (m *Manager) validateProjectConfig(config *types.ProjectConfig, repoPath string) error {
 	// Validate version compatibility
 	if config.Version != "1.0" {
-		return types.NewValidationError("config", 
+		return types.NewValidationError("config",
 			fmt.Sprintf("unsupported .wtreerc version: %s", config.Version), nil)
-		}
+	}
 
 	// Validate hook commands are not empty
 	for event, hooks := range config.Hooks {
 		for _, hook := range hooks {
 			if len(hook) == 0 {
-				return types.NewValidationError("config", 
+				return types.NewValidationError("config",
 					fmt.Sprintf("empty hook command in %s", event), nil)
 			}
 		}
@@ -150,7 +150,7 @@ func (m *Manager) validateProjectConfig(config *types.ProjectConfig, repoPath st
 	allPatterns := append(config.CopyFiles, config.LinkFiles...)
 	for _, pattern := range allPatterns {
 		if err := m.validateFilePattern(pattern, repoPath); err != nil {
-			return types.NewValidationError("config", 
+			return types.NewValidationError("config",
 				fmt.Sprintf("invalid file pattern '%s': %v", pattern, err), err)
 		}
 	}
@@ -204,12 +204,12 @@ func (m *Manager) validateFilePattern(pattern, repoPath string) error {
 
 	// Clean the pattern to resolve any . or .. components
 	cleanedPattern := filepath.Clean(pattern)
-	
+
 	// Check if cleaned pattern tries to escape the project directory
 	if strings.HasPrefix(cleanedPattern, "../") || strings.Contains(cleanedPattern, "/../") || cleanedPattern == ".." {
 		return fmt.Errorf("file pattern cannot escape project directory")
 	}
-	
+
 	// Enhanced check: scan path segments for .. components before any cleaning/joining
 	// This catches cases like "normal/../file.txt" that might be missed by other checks
 	pathSegments := strings.Split(pattern, string(filepath.Separator))
@@ -230,13 +230,13 @@ func (m *Manager) validateFilePattern(pattern, repoPath string) error {
 		// This contains actual path traversal syntax, do full validation
 		// IMPORTANT: Use original pattern, not cleaned, to detect actual traversal attempts
 		testPath := filepath.Join(repoPath, pattern)
-		
+
 		// Get canonical (absolute, symlink-resolved) paths
 		repoAbs, err := filepath.Abs(repoPath)
 		if err != nil {
 			return fmt.Errorf("cannot resolve repository path: %w", err)
 		}
-		
+
 		testAbs, err := filepath.Abs(testPath)
 		if err != nil {
 			return fmt.Errorf("cannot resolve pattern path: %w", err)
@@ -251,7 +251,7 @@ func (m *Manager) validateFilePattern(pattern, repoPath string) error {
 		// Check if testAbs would be within the project directory
 		// Use the canonical repo path for comparison
 		if !strings.HasPrefix(testAbs+string(filepath.Separator), repoCanonical+string(filepath.Separator)) &&
-		   testAbs != repoCanonical {
+			testAbs != repoCanonical {
 			return fmt.Errorf("file pattern would resolve outside project directory")
 		}
 	}

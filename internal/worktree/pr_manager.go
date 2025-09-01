@@ -27,10 +27,10 @@ type PRWorktreeOptions struct {
 
 // PRCleanupOptions defines options for PR cleanup operations
 type PRCleanupOptions struct {
-	State   string // PR state filter (open, closed, merged, all)
-	Force   bool   // Force cleanup without confirmation
-	DryRun  bool   // Show what would be cleaned up
-	Limit   int    // Maximum number of PRs to process
+	State  string // PR state filter (open, closed, merged, all)
+	Force  bool   // Force cleanup without confirmation
+	DryRun bool   // Show what would be cleaned up
+	Limit  int    // Maximum number of PRs to process
 }
 
 // PRWorktreeInfo represents a PR worktree with metadata
@@ -218,11 +218,11 @@ func (pm *PRManager) CleanupPRWorktrees(options PRCleanupOptions) error {
 	if options.State != "" && options.State != "all" {
 		// Fetch current PR states from GitHub
 		pm.ui.Progress("Checking PR states...")
-		
+
 		for _, prWt := range prWorktrees {
 			if prInfo, err := pm.github.GetPR(prWt.PRNumber); err == nil {
-				if options.State == prInfo.State || 
-				   (options.State == "closed" && (prInfo.State == "closed" || prInfo.State == "merged")) {
+				if options.State == prInfo.State ||
+					(options.State == "closed" && (prInfo.State == "closed" || prInfo.State == "merged")) {
 					prWt.PRState = prInfo.State
 					toCleanup = append(toCleanup, prWt)
 				}
@@ -284,7 +284,7 @@ func (pm *PRManager) CleanupPRWorktrees(options PRCleanupOptions) error {
 	removed := 0
 	for _, prWt := range toCleanup {
 		pm.ui.Info("Removing PR #%d worktree: %s", prWt.PRNumber, prWt.Path)
-		
+
 		deleteOptions := DeleteOptions{
 			DeleteBranch: false, // Don't delete PR branches automatically
 			Force:        options.Force,
@@ -312,10 +312,10 @@ func (pm *PRManager) generatePRWorktreePath(prNumber int) (string, error) {
 
 	parentDir := filepath.Dir(repoRoot)
 	repoName := pm.repo.GetRepoName()
-	
+
 	// PR worktree pattern: {repo}-pr-{number}
 	dirName := fmt.Sprintf("%s-pr-%d", repoName, prNumber)
-	
+
 	return filepath.Join(parentDir, dirName), nil
 }
 
@@ -328,22 +328,22 @@ func (pm *PRManager) isPRWorktree(path, repoName string) bool {
 func (pm *PRManager) extractPRNumber(path, repoName string) int {
 	baseName := filepath.Base(path)
 	expectedPrefix := repoName + "-pr-"
-	
+
 	if !strings.HasPrefix(baseName, expectedPrefix) {
 		return 0
 	}
-	
+
 	prNumberStr := strings.TrimPrefix(baseName, expectedPrefix)
 	if prNumber, err := parsePositiveInt(prNumberStr); err == nil {
 		return prNumber
 	}
-	
+
 	return 0
 }
 
 func (pm *PRManager) buildPRHookContext(event types.HookEvent, branch, worktreePath string, prInfo *github.PRInfo) types.HookContext {
 	repoRoot, _ := pm.repo.GetRepoRoot()
-	
+
 	ctx := types.HookContext{
 		Event:        event,
 		Branch:       branch,
@@ -367,7 +367,7 @@ func (pm *PRManager) buildPRHookContext(event types.HookEvent, branch, worktreeP
 
 func (pm *PRManager) storePRMetadata(worktreePath string, prInfo *github.PRInfo) error {
 	metadataPath := filepath.Join(worktreePath, ".wtree-pr.json")
-	
+
 	metadataJson := fmt.Sprintf(`{
 	"number": %d,
 	"title": %q,
@@ -380,7 +380,7 @@ func (pm *PRManager) storePRMetadata(worktreePath string, prInfo *github.PRInfo)
 	"createdAt": %q,
 	"updatedAt": %q
 }`, prInfo.Number, prInfo.Title, prInfo.Author, prInfo.State, prInfo.URL,
-		prInfo.IsDraft, prInfo.HeadRef, prInfo.BaseRef, 
+		prInfo.IsDraft, prInfo.HeadRef, prInfo.BaseRef,
 		prInfo.CreatedAt.Format(time.RFC3339), prInfo.UpdatedAt.Format(time.RFC3339))
 
 	return writeFile(metadataPath, []byte(metadataJson), 0644)
@@ -388,17 +388,17 @@ func (pm *PRManager) storePRMetadata(worktreePath string, prInfo *github.PRInfo)
 
 func (pm *PRManager) loadPRMetadata(worktreePath string) (*github.PRInfo, error) {
 	metadataPath := filepath.Join(worktreePath, ".wtree-pr.json")
-	
+
 	data, err := readFile(metadataPath)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var prInfo github.PRInfo
 	if err := json.Unmarshal(data, &prInfo); err != nil {
 		return nil, err
 	}
-	
+
 	return &prInfo, nil
 }
 

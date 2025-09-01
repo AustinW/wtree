@@ -18,7 +18,7 @@ Examples:
   wtree switch main                    # Switch to main worktree
   wtree switch feature-branch          # Switch to feature branch worktree
   wtree switch -o bugfix               # Switch and open in editor`,
-	Args: cobra.ExactArgs(1),
+	Args:              cobra.ExactArgs(1),
 	ValidArgsFunction: completeExistingWorktrees,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		manager, err := setupManager()
@@ -27,10 +27,10 @@ Examples:
 		}
 
 		identifier := args[0]
-		
+
 		// Get flag values
 		openEditor, _ := cmd.Flags().GetBool("open")
-		
+
 		options := worktree.SwitchOptions{
 			OpenEditor: openEditor,
 		}

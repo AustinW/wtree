@@ -22,7 +22,7 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var (
 	version = "dev"
-	commit  = "none" // Set at build time
+	commit  = "none"    // Set at build time
 	date    = "unknown" // Set at build time
 )
 
@@ -108,7 +108,7 @@ func setupManager() (*worktree.Manager, error) {
 
 	// Create worktree manager
 	manager := worktree.NewManager(repo, configMgr, uiMgr)
-	
+
 	// Initialize manager (loads configs)
 	if err := manager.Initialize(); err != nil {
 		return nil, err

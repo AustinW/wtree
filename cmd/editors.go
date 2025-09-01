@@ -17,7 +17,7 @@ Examples:
   wtree editors feature-branch          # Open in all configured editors
   wtree editors --editors code,vim .    # Open in specific editors
   wtree editors --terminal feature-branch  # Also open terminal`,
-	Args: cobra.MaximumNArgs(1),
+	Args:              cobra.MaximumNArgs(1),
 	ValidArgsFunction: completeExistingWorktrees,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		manager, err := setupManager()

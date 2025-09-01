@@ -29,14 +29,14 @@ Examples:
 		if err != nil {
 			return err
 		}
-		
+
 		// Get flag values
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		mergedOnly, _ := cmd.Flags().GetBool("merged-only")
 		auto, _ := cmd.Flags().GetBool("auto")
 		olderThan, _ := cmd.Flags().GetString("older-than")
 		verbose, _ := cmd.Flags().GetBool("verbose")
-		
+
 		options := worktree.CleanupOptions{
 			DryRun:     dryRun,
 			MergedOnly: mergedOnly,

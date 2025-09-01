@@ -18,7 +18,7 @@ Examples:
   wtree delete feature-branch          # Delete worktree for branch
   wtree delete -b feature-branch       # Delete worktree and branch
   wtree delete --ignore-dirty old-work # Delete even if dirty`,
-	Args: cobra.ExactArgs(1),
+	Args:              cobra.ExactArgs(1),
 	ValidArgsFunction: completeExistingWorktrees,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		manager, err := setupManager()
@@ -27,11 +27,11 @@ Examples:
 		}
 
 		identifier := args[0]
-		
+
 		// Get flag values
 		deleteBranch, _ := cmd.Flags().GetBool("branch")
 		ignoreDirty, _ := cmd.Flags().GetBool("ignore-dirty")
-		
+
 		options := worktree.DeleteOptions{
 			DeleteBranch: deleteBranch,
 			Force:        force,

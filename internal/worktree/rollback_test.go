@@ -21,19 +21,19 @@ type MockGitRepo struct {
 	deleteError      error
 }
 
-func (m *MockGitRepo) GetCurrentBranch() (string, error)                        { return "main", nil }
-func (m *MockGitRepo) BranchExists(name string) bool                           { return true }
-func (m *MockGitRepo) IsClean() (bool, error)                                  { return true, nil }
-func (m *MockGitRepo) GetRepoRoot() (string, error)                            { return "/repo", nil }
-func (m *MockGitRepo) GetRepoName() string                                     { return "test-repo" }
-func (m *MockGitRepo) GetParentDir() string                                    { return "/parent" }
-func (m *MockGitRepo) CreateBranch(name, from string) error                    { return nil }
-func (m *MockGitRepo) CreateWorktree(path, branch string) error                { return nil }
-func (m *MockGitRepo) ListWorktrees() ([]*types.WorktreeInfo, error)             { return nil, nil }
+func (m *MockGitRepo) GetCurrentBranch() (string, error)                          { return "main", nil }
+func (m *MockGitRepo) BranchExists(name string) bool                              { return true }
+func (m *MockGitRepo) IsClean() (bool, error)                                     { return true, nil }
+func (m *MockGitRepo) GetRepoRoot() (string, error)                               { return "/repo", nil }
+func (m *MockGitRepo) GetRepoName() string                                        { return "test-repo" }
+func (m *MockGitRepo) GetParentDir() string                                       { return "/parent" }
+func (m *MockGitRepo) CreateBranch(name, from string) error                       { return nil }
+func (m *MockGitRepo) CreateWorktree(path, branch string) error                   { return nil }
+func (m *MockGitRepo) ListWorktrees() ([]*types.WorktreeInfo, error)              { return nil, nil }
 func (m *MockGitRepo) GetWorktreeStatus(path string) (*git.WorktreeStatus, error) { return nil, nil }
-func (m *MockGitRepo) Merge(branch string, message string) error              { return nil }
-func (m *MockGitRepo) Checkout(branch string) error                           { return nil }
-func (m *MockGitRepo) Fetch(remote string, refspec ...string) error           { return nil }
+func (m *MockGitRepo) Merge(branch string, message string) error                  { return nil }
+func (m *MockGitRepo) Checkout(branch string) error                               { return nil }
+func (m *MockGitRepo) Fetch(remote string, refspec ...string) error               { return nil }
 
 func (m *MockGitRepo) RemoveWorktree(path string, force bool) error {
 	if m.removeError != nil {
@@ -106,7 +106,11 @@ func TestRollbackManager_FileCleanup(t *testing.T) {
 	// Create temp files for testing
 	tmpDir, err := os.MkdirTemp("", "rollback-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	testFile := filepath.Join(tmpDir, "test.txt")
 	require.NoError(t, os.WriteFile(testFile, []byte("test"), 0644))
@@ -115,7 +119,7 @@ func TestRollbackManager_FileCleanup(t *testing.T) {
 	rm := NewRollbackManager(mockRepo)
 
 	rm.AddFileCleanup(testFile)
-	
+
 	// File should exist before rollback
 	assert.FileExists(t, testFile)
 
@@ -251,7 +255,7 @@ func TestRollbackManager_DependencySkipping(t *testing.T) {
 
 	// Worktree removal should have been attempted and failed
 	assert.Empty(t, mockRepo.removedWorktrees)
-	
+
 	// Dependent operations should have been skipped
 	assert.Empty(t, mockRepo.deletedBranches)
 }

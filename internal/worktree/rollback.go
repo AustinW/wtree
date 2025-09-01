@@ -11,13 +11,13 @@ import (
 
 // RollbackManager handles rollback operations when commands fail
 type RollbackManager struct {
-	repo git.Repository
-	operations []RollbackOperation
-	dependencies map[int][]int // operation index -> list of dependent operation indices
-	mu sync.RWMutex
-	failFast bool
+	repo                  git.Repository
+	operations            []RollbackOperation
+	dependencies          map[int][]int // operation index -> list of dependent operation indices
+	mu                    sync.RWMutex
+	failFast              bool
 	failFastExplicitlySet bool // Track if SetFailFast was explicitly called
-	lastError error
+	lastError             error
 }
 
 // RollbackOperation represents a single operation that can be rolled back
@@ -25,8 +25,8 @@ type RollbackOperation struct {
 	Type        RollbackType
 	Description string
 	Action      func() error
-	Critical    bool // If true, failure of this operation stops the rollback
-	ID          int  // Unique ID for dependency tracking
+	Critical    bool  // If true, failure of this operation stops the rollback
+	ID          int   // Unique ID for dependency tracking
 	DependsOn   []int // IDs of operations this depends on
 }
 
@@ -62,8 +62,8 @@ func (rm *RollbackManager) AddWorktreeCleanup(path string) int {
 		Action: func() error {
 			return rm.repo.RemoveWorktree(path, true) // force removal
 		},
-		Critical:    true, // Worktree cleanup is critical
-		ID:          id,
+		Critical: true, // Worktree cleanup is critical
+		ID:       id,
 	}
 	rm.operations = append(rm.operations, op)
 	return id
@@ -81,8 +81,8 @@ func (rm *RollbackManager) AddBranchCleanup(branch string) int {
 		Action: func() error {
 			return rm.repo.DeleteBranch(branch, true) // force deletion
 		},
-		Critical:    false, // Branch cleanup is not critical
-		ID:          id,
+		Critical: false, // Branch cleanup is not critical
+		ID:       id,
 	}
 	rm.operations = append(rm.operations, op)
 	return id
@@ -100,8 +100,8 @@ func (rm *RollbackManager) AddFileCleanup(path string) int {
 		Action: func() error {
 			return os.RemoveAll(path)
 		},
-		Critical:    true, // File cleanup is critical
-		ID:          id,
+		Critical: true, // File cleanup is critical
+		ID:       id,
 	}
 	rm.operations = append(rm.operations, op)
 	return id
@@ -124,8 +124,8 @@ func (rm *RollbackManager) AddLinkCleanup(links []string) int {
 			}
 			return nil
 		},
-		Critical:    false, // Link cleanup is not critical
-		ID:          id,
+		Critical: false, // Link cleanup is not critical
+		ID:       id,
 	}
 	rm.operations = append(rm.operations, op)
 	return id
@@ -144,7 +144,7 @@ func (rm *RollbackManager) Execute() error {
 	executed := make(map[int]bool)
 	failed := make(map[int]bool)
 
-	// In fail-fast mode, execute critical operations first, then non-critical  
+	// In fail-fast mode, execute critical operations first, then non-critical
 	if rm.failFast {
 		// Phase 1: Execute critical operations first in reverse order
 		for i := len(rm.operations) - 1; i >= 0; i-- {
@@ -162,7 +162,7 @@ func (rm *RollbackManager) Execute() error {
 			if err := op.Action(); err != nil {
 				opError := fmt.Errorf("%s: %w", op.Description, err)
 				rm.lastError = opError
-				
+
 				// If SetFailFast was explicitly called, fail immediately and don't execute non-critical operations
 				if rm.failFastExplicitlySet {
 					rm.clearOperations()
@@ -269,7 +269,7 @@ func (rm *RollbackManager) Execute() error {
 
 	if len(errors) > 0 {
 		return types.NewFileSystemError("rollback", "",
-			fmt.Sprintf("rollback completed with %d errors", len(errors)), 
+			fmt.Sprintf("rollback completed with %d errors", len(errors)),
 			fmt.Errorf("errors: %v", errors))
 	}
 
@@ -301,7 +301,7 @@ func (rm *RollbackManager) HasOperations() bool {
 func (rm *RollbackManager) GetOperations() []string {
 	rm.mu.RLock()
 	defer rm.mu.RUnlock()
-	
+
 	descriptions := make([]string, len(rm.operations))
 	for i, op := range rm.operations {
 		descriptions[i] = op.Description
@@ -313,10 +313,10 @@ func (rm *RollbackManager) GetOperations() []string {
 func (rm *RollbackManager) AddDependency(dependentID, dependsOnID int) {
 	rm.mu.Lock()
 	defer rm.mu.Unlock()
-	
+
 	if dependentID < len(rm.operations) {
 		rm.operations[dependentID].DependsOn = append(rm.operations[dependentID].DependsOn, dependsOnID)
-		
+
 		// Update reverse dependency map for quick lookups
 		if rm.dependencies[dependsOnID] == nil {
 			rm.dependencies[dependsOnID] = make([]int, 0)

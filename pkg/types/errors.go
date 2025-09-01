@@ -68,13 +68,13 @@ func (be *BaseError) Error() string {
 	return fmt.Sprintf("%s: %s", be.operation, be.message)
 }
 
-func (be *BaseError) Type() ErrorType                          { return be.errType }
-func (be *BaseError) Operation() string                        { return be.operation }
-func (be *BaseError) Context() map[string]interface{}          { return be.context }
-func (be *BaseError) Recoverable() bool                        { return be.recoverable }
-func (be *BaseError) SuggestedActions() []string               { return be.suggestedActions }
-func (be *BaseError) UserMessage() string                      { return be.message }
-func (be *BaseError) Unwrap() error                            { return be.cause }
+func (be *BaseError) Type() ErrorType                 { return be.errType }
+func (be *BaseError) Operation() string               { return be.operation }
+func (be *BaseError) Context() map[string]interface{} { return be.context }
+func (be *BaseError) Recoverable() bool               { return be.recoverable }
+func (be *BaseError) SuggestedActions() []string      { return be.suggestedActions }
+func (be *BaseError) UserMessage() string             { return be.message }
+func (be *BaseError) Unwrap() error                   { return be.cause }
 
 // Specific error types
 
@@ -173,7 +173,7 @@ func NewConfigError(operation, message string, cause error) *ConfigError {
 	}
 }
 
-// HookError represents hook execution failures  
+// HookError represents hook execution failures
 type HookError struct {
 	*BaseError
 }

@@ -82,7 +82,7 @@ func TestLockManager_ConcurrentAccess(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			
+
 			lock, err := lm.AcquireLock(LockTypeCreate, targetPath, timeout)
 			if err != nil {
 				mu.Lock()
@@ -97,7 +97,7 @@ func TestLockManager_ConcurrentAccess(t *testing.T) {
 
 			// Hold lock briefly
 			time.Sleep(50 * time.Millisecond)
-			
+
 			_ = lm.ReleaseLock(lock)
 		}()
 	}
@@ -119,7 +119,7 @@ func TestLockManager_Timeout(t *testing.T) {
 	defer func() { _ = lm2.ReleaseAll() }()
 
 	targetPath := "/test/timeout"
-	
+
 	// First manager acquires lock
 	lock1, err := lm1.AcquireLock(LockTypeCreate, targetPath, 5*time.Second)
 	require.NoError(t, err)
@@ -147,17 +147,17 @@ func TestLockManager_LockFileContent(t *testing.T) {
 	defer func() { _ = lm.ReleaseAll() }()
 
 	targetPath := "/test/lockfile-content"
-	
+
 	lock, err := lm.AcquireLock(LockTypeCreate, targetPath, 5*time.Second)
 	require.NoError(t, err)
 	defer func() { _ = lm.ReleaseLock(lock) }()
 
 	// Check that lock file exists and has correct content
 	assert.FileExists(t, lock.lockPath)
-	
+
 	content, err := os.ReadFile(lock.lockPath)
 	require.NoError(t, err)
-	
+
 	contentStr := string(content)
 	assert.Contains(t, contentStr, "pid=")
 	assert.Contains(t, contentStr, "operation=create")
@@ -171,7 +171,7 @@ func TestLockManager_ReleaseAll(t *testing.T) {
 	// Acquire multiple locks
 	lock1, err := lm.AcquireLock(LockTypeCreate, "/test/path1", 5*time.Second)
 	require.NoError(t, err)
-	
+
 	lock2, err := lm.AcquireLock(LockTypeDelete, "/test/path2", 5*time.Second)
 	require.NoError(t, err)
 
@@ -215,7 +215,7 @@ func TestGenerateLockKey(t *testing.T) {
 func TestOperationLock_Cleanup(t *testing.T) {
 	tmpDir := t.TempDir()
 	lockPath := filepath.Join(tmpDir, "test.lock")
-	
+
 	lock := &OperationLock{
 		lockPath:  lockPath,
 		pid:       os.Getpid(),
@@ -255,17 +255,17 @@ func TestLockManager_StresTest(t *testing.T) {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
-			
+
 			for j := 0; j < numOperations; j++ {
 				lock, err := lm.AcquireLock(LockTypeCreate, targetPath, 100*time.Millisecond)
 				if err == nil {
 					mu.Lock()
 					successCount++
 					mu.Unlock()
-					
+
 					// Simulate some work
 					time.Sleep(time.Microsecond)
-					
+
 					_ = lm.ReleaseLock(lock)
 				}
 			}

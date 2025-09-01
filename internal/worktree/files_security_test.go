@@ -15,7 +15,11 @@ func TestFileManager_SymlinkDetection(t *testing.T) {
 	// Create temporary directories
 	tmpDir, err := os.MkdirTemp("", "wtree-security-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	srcDir := filepath.Join(tmpDir, "src")
 	dstDir := filepath.Join(tmpDir, "dst")
@@ -61,14 +65,14 @@ func TestFileManager_SymlinkDetection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clean destination
-			os.RemoveAll(dstDir)
+			_ = os.RemoveAll(dstDir) // Ignore error for test cleanup
 			_ = os.MkdirAll(dstDir, 0755)
 
 			err := fm.CopyFiles(tt.patterns, srcDir, dstDir, nil)
 
 			if tt.expectError {
 				assert.Error(t, err, tt.description)
-				assert.True(t, strings.Contains(err.Error(), "symlink"), 
+				assert.True(t, strings.Contains(err.Error(), "symlink"),
 					"Error should mention symlink: %v", err)
 			} else {
 				assert.NoError(t, err, tt.description)
@@ -82,7 +86,11 @@ func TestFileManager_PathBoundaryEnforcement(t *testing.T) {
 	// Create temporary directories
 	tmpDir, err := os.MkdirTemp("", "wtree-boundary-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	allowedDir := filepath.Join(tmpDir, "allowed")
 	forbiddenDir := filepath.Join(tmpDir, "forbidden")
@@ -149,7 +157,11 @@ func TestFileManager_NestedSymlinkAttack(t *testing.T) {
 	// Create temporary directories
 	tmpDir, err := os.MkdirTemp("", "wtree-nested-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	srcDir := filepath.Join(tmpDir, "src")
 	targetDir := filepath.Join(tmpDir, "target")
@@ -186,10 +198,14 @@ func TestFileManager_ResourceCleanup(t *testing.T) {
 	// The main goal is to ensure no resource leaks occur
 	tmpDir, err := os.MkdirTemp("", "wtree-resource-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	srcDir := filepath.Join(tmpDir, "src")
-	dstDir := filepath.Join(tmpDir, "dst") 
+	dstDir := filepath.Join(tmpDir, "dst")
 	require.NoError(t, os.MkdirAll(srcDir, 0755))
 	require.NoError(t, os.MkdirAll(dstDir, 0755))
 
@@ -210,7 +226,7 @@ func TestFileManager_ResourceCleanup(t *testing.T) {
 	dstFile2 := filepath.Join(dstDir, "should-not-exist.txt")
 	err = fm.copyFile(nonExistentSrc, dstFile2)
 	assert.Error(t, err, "Copy from non-existent source should fail")
-	
+
 	// Verify no destination file was created
 	_, statErr := os.Stat(dstFile2)
 	assert.True(t, os.IsNotExist(statErr), "Destination file should not exist after failed copy from non-existent source")
@@ -227,7 +243,11 @@ func TestFileManager_ResourceCleanup(t *testing.T) {
 func TestFileManager_SecurityLogging(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "wtree-logging-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	srcDir := filepath.Join(tmpDir, "src")
 	outsideDir := filepath.Join(tmpDir, "outside")
@@ -256,7 +276,11 @@ func TestFileManager_SecurityLogging(t *testing.T) {
 func TestFileManager_LegitimateFilesWithDots(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "wtree-dots-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	srcDir := filepath.Join(tmpDir, "src")
 	dstDir := filepath.Join(tmpDir, "dst")
@@ -305,7 +329,11 @@ func TestFileManager_LegitimateFilesWithDots(t *testing.T) {
 func TestFileManager_RaceConditionResistance(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "wtree-race-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	srcDir := filepath.Join(tmpDir, "src")
 	dstDir := filepath.Join(tmpDir, "dst")
@@ -339,7 +367,11 @@ func TestFileManager_RaceConditionResistance(t *testing.T) {
 func BenchmarkSecurityValidation(b *testing.B) {
 	tmpDir, err := os.MkdirTemp("", "wtree-benchmark")
 	require.NoError(b, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			b.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	srcDir := filepath.Join(tmpDir, "src")
 	require.NoError(b, os.MkdirAll(srcDir, 0755))

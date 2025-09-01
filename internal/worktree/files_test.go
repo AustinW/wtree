@@ -13,18 +13,22 @@ func TestFileManager_CopyFiles(t *testing.T) {
 	// Create temporary directories
 	tmpDir, err := os.MkdirTemp("", "wtree-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	srcDir := filepath.Join(tmpDir, "src")
 	dstDir := filepath.Join(tmpDir, "dst")
-	
+
 	require.NoError(t, os.MkdirAll(srcDir, 0755))
 	require.NoError(t, os.MkdirAll(dstDir, 0755))
 
 	// Create test files
 	testFile := filepath.Join(srcDir, "test.txt")
 	require.NoError(t, os.WriteFile(testFile, []byte("test content"), 0644))
-	
+
 	testDir := filepath.Join(srcDir, "testdir")
 	require.NoError(t, os.MkdirAll(testDir, 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(testDir, "nested.txt"), []byte("nested"), 0644))
@@ -32,25 +36,25 @@ func TestFileManager_CopyFiles(t *testing.T) {
 	fm := NewFileManager(false)
 
 	tests := []struct {
-		name         string
-		patterns     []string
+		name           string
+		patterns       []string
 		ignorePatterns []string
-		expectError  bool
-		expectedFiles []string
+		expectError    bool
+		expectedFiles  []string
 	}{
 		{
-			name:     "copy single file",
-			patterns: []string{"test.txt"},
+			name:          "copy single file",
+			patterns:      []string{"test.txt"},
 			expectedFiles: []string{"test.txt"},
 		},
 		{
-			name:     "copy directory",
-			patterns: []string{"testdir"},
+			name:          "copy directory",
+			patterns:      []string{"testdir"},
 			expectedFiles: []string{"testdir/nested.txt"},
 		},
 		{
-			name:     "glob pattern",
-			patterns: []string{"*.txt"},
+			name:          "glob pattern",
+			patterns:      []string{"*.txt"},
 			expectedFiles: []string{"test.txt"},
 		},
 		{
@@ -64,18 +68,18 @@ func TestFileManager_CopyFiles(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clean destination
-			os.RemoveAll(dstDir)
+			_ = os.RemoveAll(dstDir) // Ignore error for test cleanup
 			_ = os.MkdirAll(dstDir, 0755)
 
 			err := fm.CopyFiles(tt.patterns, srcDir, dstDir, tt.ignorePatterns)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				return
 			}
 
 			assert.NoError(t, err)
-			
+
 			// Check expected files exist
 			for _, expectedFile := range tt.expectedFiles {
 				expectedPath := filepath.Join(dstDir, expectedFile)

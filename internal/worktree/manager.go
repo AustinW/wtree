@@ -16,13 +16,13 @@ import (
 
 // Manager handles core worktree operations and orchestrates all components
 type Manager struct {
-	repo         git.Repository
-	configMgr    *config.Manager
-	ui           *ui.Manager
-	fileManager  *FileManager
-	rollback     *RollbackManager
-	lockManager  *LockManager
-	globalConfig *types.WTreeConfig
+	repo          git.Repository
+	configMgr     *config.Manager
+	ui            *ui.Manager
+	fileManager   *FileManager
+	rollback      *RollbackManager
+	lockManager   *LockManager
+	globalConfig  *types.WTreeConfig
 	projectConfig *types.ProjectConfig
 }
 
@@ -50,7 +50,7 @@ func NewManager(repo git.Repository, configMgr *config.Manager, ui *ui.Manager) 
 // Initialize loads configurations and validates the setup
 func (m *Manager) Initialize() error {
 	var err error
-	
+
 	// Load global configuration
 	m.globalConfig, err = m.configMgr.LoadGlobalConfig()
 	if err != nil {
@@ -62,7 +62,7 @@ func (m *Manager) Initialize() error {
 	if err != nil {
 		return err
 	}
-	
+
 	m.projectConfig, err = m.configMgr.LoadProjectConfig(repoRoot)
 	if err != nil {
 		return fmt.Errorf("failed to load project config: %w", err)
@@ -110,7 +110,7 @@ func (m *Manager) Create(branchName string, options CreateOptions) error {
 
 	// Step 1: Validation
 	progress.StartStep(0)
-	
+
 	// Generate worktree path
 	worktreePath, err := m.generateWorktreePath(branchName)
 	if err != nil {
@@ -146,10 +146,10 @@ func (m *Manager) Create(branchName string, options CreateOptions) error {
 	// Create branch if needed
 	if !m.repo.BranchExists(branchName) {
 		if !options.CreateBranch {
-			return types.NewGitError("create-worktree", 
+			return types.NewGitError("create-worktree",
 				fmt.Sprintf("branch '%s' does not exist", branchName), nil)
 		}
-		
+
 		m.ui.Info("Creating branch '%s' from '%s'", branchName, options.FromBranch)
 		if err := m.repo.CreateBranch(branchName, options.FromBranch); err != nil {
 			return fmt.Errorf("failed to create branch: %w", err)
@@ -184,7 +184,7 @@ func (m *Manager) Create(branchName string, options CreateOptions) error {
 
 	// Step 3: Project setup
 	progress.StartStep(2)
-	
+
 	// Copy/link files based on configuration
 	if err := m.handleFileOperations(worktreePath); err != nil {
 		progress.FailStep(2)
@@ -204,7 +204,7 @@ func (m *Manager) Create(branchName string, options CreateOptions) error {
 	// Success - clear rollback operations
 	m.rollback.Clear()
 	m.ui.Success("Worktree created successfully: %s", worktreePath)
-	
+
 	// Step 4: Open in editor if configured
 	if options.OpenEditor || m.shouldAutoOpenEditor() {
 		progress.StartStep(3)
@@ -234,7 +234,7 @@ func (m *Manager) Delete(identifier string, options DeleteOptions) error {
 	}
 
 	if worktree.IsMainRepo {
-		return types.NewValidationError("delete-worktree", 
+		return types.NewValidationError("delete-worktree",
 			"cannot delete main repository worktree", nil)
 	}
 
@@ -260,7 +260,7 @@ func (m *Manager) Delete(identifier string, options DeleteOptions) error {
 		status, err := m.repo.GetWorktreeStatus(worktree.Path)
 		if err == nil && !status.IsClean {
 			if !options.IgnoreDirty {
-				return types.NewValidationError("delete-worktree", 
+				return types.NewValidationError("delete-worktree",
 					fmt.Sprintf("worktree has uncommitted changes: %s", worktree.Path), nil)
 			}
 			m.ui.Warning("Worktree has uncommitted changes but ignoring due to --ignore-dirty")
@@ -336,7 +336,7 @@ func (m *Manager) List(options ListOptions) error {
 	for _, wt := range worktrees {
 		status := "clean"
 		wtType := "worktree"
-		
+
 		if wt.IsMainRepo {
 			wtType = "main"
 		}
@@ -385,7 +385,7 @@ func (m *Manager) Merge(sourceBranch string, options MergeOptions) error {
 			return fmt.Errorf("failed to check repository status: %w", err)
 		}
 		if !isClean {
-			return types.NewValidationError("merge", 
+			return types.NewValidationError("merge",
 				"working directory must be clean before merge", nil)
 		}
 	}
@@ -427,11 +427,11 @@ func (m *Manager) Switch(identifier string, options SwitchOptions) error {
 	}
 
 	m.ui.Success("Switching to worktree: %s (%s)", worktree.Branch, worktree.Path)
-	
+
 	// Output shell command to change directory
 	// This allows the user to run: eval "$(wtree switch branch-name)"
 	fmt.Printf("cd %s\n", shellescape(worktree.Path))
-	
+
 	if options.OpenEditor || m.shouldAutoOpenEditor() {
 		if err := m.openInEditor(worktree.Path); err != nil {
 			m.ui.Warning("Failed to open in editor: %v", err)
@@ -485,7 +485,7 @@ func (m *Manager) Status(options StatusOptions) error {
 		if wt.IsMainRepo {
 			header += " [main repository]"
 		}
-		
+
 		m.ui.Header("%s", header)
 		m.ui.Info("Path: %s", wt.Path)
 
@@ -560,7 +560,7 @@ func (m *Manager) Cleanup(options CleanupOptions) error {
 		m.ui.Header("Cleanup Candidates")
 		table := m.ui.NewTable()
 		table.SetHeaders("Branch", "Path", "Reason", "Last Activity")
-		
+
 		for _, candidate := range candidates {
 			table.AddRow(
 				candidate.Branch,
@@ -589,7 +589,7 @@ func (m *Manager) Cleanup(options CleanupOptions) error {
 	cleaned := 0
 	for _, candidate := range candidates {
 		m.ui.Info("Cleaning up %s...", candidate.Branch)
-		
+
 		deleteOptions := DeleteOptions{
 			DeleteBranch: candidate.ShouldDeleteBranch,
 			Force:        true,
@@ -705,7 +705,7 @@ func (m *Manager) generateWorktreePath(branchName string) (string, error) {
 
 	parentDir := filepath.Dir(repoRoot)
 	repoName := m.repo.GetRepoName()
-	
+
 	// Apply worktree pattern from project config
 	pattern := m.projectConfig.WorktreePattern
 	if pattern == "" {
@@ -714,7 +714,7 @@ func (m *Manager) generateWorktreePath(branchName string) (string, error) {
 
 	dirName := strings.ReplaceAll(pattern, "{repo}", repoName)
 	dirName = strings.ReplaceAll(dirName, "{branch}", branchName)
-	
+
 	return filepath.Join(parentDir, dirName), nil
 }
 
@@ -738,13 +738,13 @@ func (m *Manager) resolveWorktree(identifier string) (*types.WorktreeInfo, error
 		}
 	}
 
-	return nil, types.NewValidationError("resolve-worktree", 
+	return nil, types.NewValidationError("resolve-worktree",
 		fmt.Sprintf("worktree not found: %s", identifier), nil)
 }
 
 func (m *Manager) buildHookContext(event types.HookEvent, branch, worktreePath string) types.HookContext {
 	repoRoot, _ := m.repo.GetRepoRoot()
-	
+
 	return types.HookContext{
 		Event:        event,
 		Branch:       branch,
@@ -761,7 +761,7 @@ func (m *Manager) executeHooks(event types.HookEvent, ctx types.HookContext) err
 
 	timeout := m.configMgr.ResolveTimeout(m.globalConfig, m.projectConfig)
 	allowFailure := m.configMgr.ResolveAllowFailure(m.globalConfig, m.projectConfig)
-	
+
 	runner := NewHookRunner(m.projectConfig, timeout, m.globalConfig.UI.Verbose, allowFailure)
 	return runner.RunHooks(event, ctx)
 }
@@ -807,7 +807,7 @@ func (m *Manager) executeEditorCommand(cmdArgs []string) error {
 	}
 
 	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
-	
+
 	// For some editors, we want to run in background (detached)
 	// For others (like vim/nano), we want to wait
 	terminalEditors := map[string]bool{
@@ -833,11 +833,11 @@ func (m *Manager) validateCreateOptions(branchName string, options CreateOptions
 	if branchName == "" {
 		return types.NewValidationError("create-options", "branch name is required", nil)
 	}
-	
+
 	if strings.ContainsAny(branchName, "/\\:*?\"<>|") {
 		return types.NewValidationError("create-options", "branch name contains invalid characters", nil)
 	}
-	
+
 	return nil
 }
 
@@ -978,7 +978,7 @@ func (m *Manager) Interactive(options InteractiveOptions) error {
 	// we would use a library like github.com/manifoldco/promptui or
 	// github.com/AlecAivazis/survey for fuzzy finding
 	m.ui.Info("\nEnter the number of the branch you want to select (or press Enter to cancel):")
-	
+
 	var selection int
 	if _, err := fmt.Scanln(&selection); err != nil {
 		m.ui.Info("Selection cancelled")
@@ -1050,7 +1050,7 @@ func (m *Manager) Interactive(options InteractiveOptions) error {
 func (m *Manager) OpenInEditors(identifier string, options EditorsOptions) error {
 	// Resolve the worktree
 	var worktreePath string
-	
+
 	if identifier == "." {
 		// Current directory - resolve to worktree path
 		currentDir, err := os.Getwd()
@@ -1103,23 +1103,23 @@ func (m *Manager) OpenInEditors(identifier string, options EditorsOptions) error
 // openInSpecificEditor opens a path in a specific editor
 func (m *Manager) openInSpecificEditor(path, editor string) error {
 	m.ui.Info("Opening in %s: %s", editor, path)
-	
+
 	// Map of common editors and their command patterns
 	editorCommands := map[string][]string{
-		"code":        {"code", path},
-		"cursor":      {"cursor", path},
-		"vim":         {"vim", path},
-		"nvim":        {"nvim", path},
-		"nano":        {"nano", path},
-		"emacs":       {"emacs", path},
-		"subl":        {"subl", path}, // Sublime Text
-		"atom":        {"atom", path},
-		"webstorm":    {"webstorm", path},
-		"idea":        {"idea", path},
-		"pycharm":     {"pycharm", path},
-		"goland":      {"goland", path},
-		"fleet":       {"fleet", path},
-		"zed":         {"zed", path},
+		"code":     {"code", path},
+		"cursor":   {"cursor", path},
+		"vim":      {"vim", path},
+		"nvim":     {"nvim", path},
+		"nano":     {"nano", path},
+		"emacs":    {"emacs", path},
+		"subl":     {"subl", path}, // Sublime Text
+		"atom":     {"atom", path},
+		"webstorm": {"webstorm", path},
+		"idea":     {"idea", path},
+		"pycharm":  {"pycharm", path},
+		"goland":   {"goland", path},
+		"fleet":    {"fleet", path},
+		"zed":      {"zed", path},
 	}
 
 	// Check if we have a predefined command for this editor
@@ -1143,7 +1143,7 @@ func (m *Manager) openTerminal(path string) error {
 		"iTerm.app":    {"open", "-a", "iTerm", path},
 		"Alacritty":    {"alacritty", "--working-directory", path},
 		"Kitty":        {"kitty", "--directory", path},
-		
+
 		// Linux/Windows (simplified)
 		"gnome-terminal": {"gnome-terminal", "--working-directory=" + path},
 		"xterm":          {"xterm", "-e", "cd " + path + " && bash"},
@@ -1152,7 +1152,7 @@ func (m *Manager) openTerminal(path string) error {
 
 	// Try common terminals in order of preference
 	preferredTerminals := []string{"iTerm.app", "Terminal.app", "Alacritty", "Kitty", "gnome-terminal", "wt", "xterm"}
-	
+
 	for _, terminal := range preferredTerminals {
 		if cmdArgs, exists := terminalCommands[terminal]; exists {
 			if err := m.executeEditorCommand(cmdArgs); err == nil {

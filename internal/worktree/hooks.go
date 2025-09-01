@@ -68,7 +68,7 @@ func (he *HookExecutor) executeHook(cmd string, ctx types.HookContext, current, 
 
 	// Execute command and capture output
 	output, err := command.CombinedOutput()
-	
+
 	if err != nil {
 		fmt.Printf("    ✗ Hook failed: %s\n", string(output))
 		return err
@@ -108,9 +108,9 @@ func (he *HookExecutor) buildEnvironment(ctx types.HookContext) []string {
 
 	// Add WTree-specific environment variables
 	wtreeEnv := map[string]string{
-		"WTREE_EVENT":        string(ctx.Event),
-		"WTREE_BRANCH":       ctx.Branch,
-		"WTREE_REPO_PATH":    ctx.RepoPath,
+		"WTREE_EVENT":         string(ctx.Event),
+		"WTREE_BRANCH":        ctx.Branch,
+		"WTREE_REPO_PATH":     ctx.RepoPath,
 		"WTREE_WORKTREE_PATH": ctx.WorktreePath,
 		"WTREE_TARGET_BRANCH": ctx.TargetBranch,
 	}
@@ -136,7 +136,7 @@ func (he *HookExecutor) ValidateHooks() error {
 				return types.NewValidationError("hook-validation",
 					fmt.Sprintf("empty hook command in %s", event), nil)
 			}
-			
+
 			// Basic command validation - check for dangerous patterns
 			if err := he.validateHookCommand(hook); err != nil {
 				return types.NewValidationError("hook-validation",
@@ -155,7 +155,7 @@ func (he *HookExecutor) validateHookCommand(cmd string) error {
 
 	// Normalize and clean the command for analysis
 	normalizedCmd := he.normalizeCommand(cmd)
-	
+
 	// Check for dangerous patterns with comprehensive detection
 	if err := he.checkDangerousPatterns(normalizedCmd); err != nil {
 		log.Printf("Security violation: %v in command: %s", err, cmd)

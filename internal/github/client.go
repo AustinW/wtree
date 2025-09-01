@@ -23,11 +23,11 @@ type Client struct {
 var (
 	// allowedCommands is a whitelist of permitted GitHub CLI commands
 	allowedCommands = map[string]bool{
-		"gh":           true,
-		"/usr/bin/gh":  true,
-		"/usr/local/bin/gh": true,
-		"hub":          true, // Alternative GitHub CLI
-		"/usr/bin/hub": true,
+		"gh":                 true,
+		"/usr/bin/gh":        true,
+		"/usr/local/bin/gh":  true,
+		"hub":                true, // Alternative GitHub CLI
+		"/usr/bin/hub":       true,
 		"/usr/local/bin/hub": true,
 	}
 
@@ -37,19 +37,19 @@ var (
 
 // PRInfo represents information about a GitHub PR
 type PRInfo struct {
-	Number      int       `json:"number"`
-	Title       string    `json:"title"`
-	Author      string    `json:"author"`
-	HeadRef     string    `json:"headRefName"`
-	BaseRef     string    `json:"baseRefName"`
-	State       string    `json:"state"`
-	URL         string    `json:"url"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-	IsDraft     bool      `json:"isDraft"`
-	Mergeable   string    `json:"mergeable"`
-	HeadSha     string    `json:"headRefOid"`
-	Repository  string    `json:"repository"`
+	Number     int       `json:"number"`
+	Title      string    `json:"title"`
+	Author     string    `json:"author"`
+	HeadRef    string    `json:"headRefName"`
+	BaseRef    string    `json:"baseRefName"`
+	State      string    `json:"state"`
+	URL        string    `json:"url"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
+	IsDraft    bool      `json:"isDraft"`
+	Mergeable  string    `json:"mergeable"`
+	HeadSha    string    `json:"headRefOid"`
+	Repository string    `json:"repository"`
 }
 
 // validateCLICommand validates the GitHub CLI command for security
@@ -62,7 +62,7 @@ func validateCLICommand(cliCommand string) error {
 	// Check pattern to prevent injection attacks
 	if !validCommandPattern.MatchString(cliCommand) {
 		log.Printf("Security violation: Invalid CLI command pattern detected: %s", cliCommand)
-		return types.NewValidationError("cli-command", 
+		return types.NewValidationError("cli-command",
 			"Invalid CLI command format. Only simple executable names and standard paths are allowed", nil)
 	}
 
@@ -73,12 +73,12 @@ func validateCLICommand(cliCommand string) error {
 			baseName := filepath.Base(cliCommand)
 			if !allowedCommands[baseName] {
 				log.Printf("Security violation: Unauthorized CLI command attempted: %s", cliCommand)
-				return types.NewValidationError("cli-command", 
+				return types.NewValidationError("cli-command",
 					"CLI command not in allowlist. Only 'gh' and 'hub' are permitted GitHub CLI tools", nil)
 			}
 		} else {
 			log.Printf("Security violation: Unauthorized CLI command attempted: %s", cliCommand)
-			return types.NewValidationError("cli-command", 
+			return types.NewValidationError("cli-command",
 				"CLI command not in allowlist. Only 'gh' and 'hub' are permitted GitHub CLI tools", nil)
 		}
 	}
@@ -101,7 +101,7 @@ func NewClient(cliCommand string, timeout time.Duration) *Client {
 		// Use safe default instead of failing completely
 		cliCommand = "gh"
 	}
-	
+
 	return &Client{
 		cliCommand: cliCommand,
 		timeout:    timeout,
@@ -113,7 +113,7 @@ func (c *Client) IsAvailable() error {
 	// Re-validate CLI command for additional security
 	if err := validateCLICommand(c.cliCommand); err != nil {
 		log.Printf("Security validation failed for CLI command: %v", err)
-		return types.NewConfigError("github-cli-security", 
+		return types.NewConfigError("github-cli-security",
 			"GitHub CLI command failed security validation", err)
 	}
 
@@ -126,7 +126,7 @@ func (c *Client) IsAvailable() error {
 	// Check if user is authenticated
 	cmd = exec.Command(c.cliCommand, "auth", "status")
 	if err := cmd.Run(); err != nil {
-		return types.NewConfigError("github-auth", 
+		return types.NewConfigError("github-auth",
 			"GitHub CLI not authenticated. Run 'gh auth login' first", err)
 	}
 
@@ -142,24 +142,24 @@ func (c *Client) GetPR(prNumber int) (*PRInfo, error) {
 	// Use gh pr view to get PR information in JSON format
 	cmd := exec.Command(c.cliCommand, "pr", "view", strconv.Itoa(prNumber), "--json",
 		"number,title,author,headRefName,baseRefName,state,url,createdAt,updatedAt,isDraft,mergeable,headRefOid")
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			stderr := string(exitErr.Stderr)
 			if strings.Contains(stderr, "not found") {
-				return nil, types.NewValidationError("pr-not-found", 
+				return nil, types.NewValidationError("pr-not-found",
 					fmt.Sprintf("PR #%d not found in this repository", prNumber), nil)
 			}
 		}
-		return nil, types.NewGitError("github-pr-fetch", 
+		return nil, types.NewGitError("github-pr-fetch",
 			fmt.Sprintf("failed to fetch PR #%d", prNumber), err)
 	}
 
 	var prData struct {
-		Number      int    `json:"number"`
-		Title       string `json:"title"`
-		Author      struct {
+		Number int    `json:"number"`
+		Title  string `json:"title"`
+		Author struct {
 			Login string `json:"login"`
 		} `json:"author"`
 		HeadRefName string    `json:"headRefName"`
@@ -210,16 +210,16 @@ func (c *Client) ListPRs(state string) ([]*PRInfo, error) {
 
 	cmd := exec.Command(c.cliCommand, "pr", "list", "--state", state, "--json",
 		"number,title,author,headRefName,baseRefName,state,url,createdAt,updatedAt,isDraft,mergeable,headRefOid")
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, types.NewGitError("github-pr-list", "failed to list PRs", err)
 	}
 
 	var prDataList []struct {
-		Number      int    `json:"number"`
-		Title       string `json:"title"`
-		Author      struct {
+		Number int    `json:"number"`
+		Title  string `json:"title"`
+		Author struct {
 			Login string `json:"login"`
 		} `json:"author"`
 		HeadRefName string    `json:"headRefName"`
@@ -268,10 +268,10 @@ func (c *Client) ListPRs(state string) ([]*PRInfo, error) {
 // CheckoutPR checks out the PR branch locally
 func (c *Client) CheckoutPR(prNumber int) (string, error) {
 	cmd := exec.Command(c.cliCommand, "pr", "checkout", strconv.Itoa(prNumber))
-	
+
 	output, err := cmd.Output()
 	if err != nil {
-		return "", types.NewGitError("github-pr-checkout", 
+		return "", types.NewGitError("github-pr-checkout",
 			fmt.Sprintf("failed to checkout PR #%d", prNumber), err)
 	}
 
@@ -299,7 +299,7 @@ func (c *Client) CheckoutPR(prNumber int) (string, error) {
 // getRepositoryName gets the current repository name from GitHub
 func (c *Client) getRepositoryName() (string, error) {
 	cmd := exec.Command(c.cliCommand, "repo", "view", "--json", "name")
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		return "", types.NewGitError("github-repo-info", "failed to get repository info", err)
@@ -319,14 +319,14 @@ func (c *Client) getRepositoryName() (string, error) {
 // ValidatePRState checks if PR is in a suitable state for worktree creation
 func (c *Client) ValidatePRState(prInfo *PRInfo) error {
 	if prInfo.State != "open" {
-		return types.NewValidationError("pr-state", 
+		return types.NewValidationError("pr-state",
 			fmt.Sprintf("PR #%d is %s, only open PRs can be checked out", prInfo.Number, prInfo.State), nil)
 	}
 
-	if prInfo.IsDraft {
-		// Allow draft PRs but warn the user
-		// This is just a validation function, warning should be handled by the caller
-	}
+	// Allow draft PRs but warn the user  
+	// This is just a validation function, warning should be handled by the caller
+	// Note: Draft PRs are allowed but may have limited functionality
+	_ = prInfo.IsDraft // Acknowledge draft status check
 
 	return nil
 }

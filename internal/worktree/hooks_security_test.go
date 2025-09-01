@@ -531,7 +531,7 @@ func TestValidateHooks_Integration(t *testing.T) {
 
 func BenchmarkValidateHookCommand(b *testing.B) {
 	executor := NewHookExecutor(&types.ProjectConfig{}, 30*time.Second, false)
-	
+
 	commands := []string{
 		"npm install",
 		"rm -rf /",

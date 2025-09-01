@@ -24,12 +24,12 @@ Examples:
 		if err != nil {
 			return err
 		}
-		
+
 		// Get flag values
 		showStatus, _ := cmd.Flags().GetBool("status")
 		branchFilter, _ := cmd.Flags().GetString("filter")
 		onlyDirty, _ := cmd.Flags().GetBool("dirty")
-		
+
 		options := worktree.ListOptions{
 			ShowStatus:   showStatus,
 			BranchFilter: branchFilter,

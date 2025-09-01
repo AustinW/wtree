@@ -155,7 +155,7 @@ func (r *GitRepo) CreateBranch(name, from string) error {
 	cmd := exec.Command("git", "branch", name, from)
 	cmd.Dir = r.repoRoot
 	if err := cmd.Run(); err != nil {
-		return types.NewGitError("create-branch", 
+		return types.NewGitError("create-branch",
 			fmt.Sprintf("failed to create branch '%s' from '%s'", name, from), err)
 	}
 
@@ -175,7 +175,7 @@ func (r *GitRepo) DeleteBranch(name string, force bool) error {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = r.repoRoot
 	if err := cmd.Run(); err != nil {
-		return types.NewGitError("delete-branch", 
+		return types.NewGitError("delete-branch",
 			fmt.Sprintf("failed to delete branch '%s'", name), err)
 	}
 
@@ -188,7 +188,7 @@ func (r *GitRepo) ListBranches() ([]string, error) {
 	cmd.Dir = r.repoRoot
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, types.NewGitError("list-branches", 
+		return nil, types.NewGitError("list-branches",
 			"failed to list branches", err)
 	}
 
@@ -208,14 +208,14 @@ func (r *GitRepo) ListBranches() ([]string, error) {
 func (r *GitRepo) CreateWorktree(path, branch string) error {
 	// Ensure path doesn't exist
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		return types.NewGitError("create-worktree", 
+		return types.NewGitError("create-worktree",
 			fmt.Sprintf("path already exists: %s", path), nil)
 	}
 
 	cmd := exec.Command("git", "worktree", "add", path, branch)
 	cmd.Dir = r.repoRoot
 	if err := cmd.Run(); err != nil {
-		return types.NewGitError("create-worktree", 
+		return types.NewGitError("create-worktree",
 			fmt.Sprintf("failed to create worktree at '%s' for branch '%s'", path, branch), err)
 	}
 
@@ -233,7 +233,7 @@ func (r *GitRepo) RemoveWorktree(path string, force bool) error {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = r.repoRoot
 	if err := cmd.Run(); err != nil {
-		return types.NewGitError("remove-worktree", 
+		return types.NewGitError("remove-worktree",
 			fmt.Sprintf("failed to remove worktree at '%s'", path), err)
 	}
 
@@ -338,7 +338,7 @@ func (r *GitRepo) Merge(branch string, message string) error {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = r.repoRoot
 	if err := cmd.Run(); err != nil {
-		return types.NewGitError("merge", 
+		return types.NewGitError("merge",
 			fmt.Sprintf("failed to merge branch '%s'", branch), err)
 	}
 
@@ -350,7 +350,7 @@ func (r *GitRepo) Checkout(branch string) error {
 	cmd := exec.Command("git", "checkout", branch)
 	cmd.Dir = r.repoRoot
 	if err := cmd.Run(); err != nil {
-		return types.NewGitError("checkout", 
+		return types.NewGitError("checkout",
 			fmt.Sprintf("failed to checkout branch '%s'", branch), err)
 	}
 
@@ -365,7 +365,7 @@ func (r *GitRepo) Fetch(remote string, refspecs ...string) error {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = r.repoRoot
 	if err := cmd.Run(); err != nil {
-		return types.NewGitError("fetch", 
+		return types.NewGitError("fetch",
 			fmt.Sprintf("failed to fetch from '%s'", remote), err)
 	}
 

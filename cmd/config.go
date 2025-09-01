@@ -125,7 +125,7 @@ $HOME/.config/wtree/config.yaml with default settings.`,
 
 func init() {
 	rootCmd.AddCommand(configCmd)
-	
+
 	configCmd.AddCommand(configInitCmd)
 	configCmd.AddCommand(configGlobalCmd)
 

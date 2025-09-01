@@ -97,7 +97,7 @@ func (m *Manager) InfoIndented(format string, args ...interface{}) {
 // Confirm asks the user for confirmation
 func (m *Manager) Confirm(message string) error {
 	fmt.Printf("%s [y/N]: ", message)
-	
+
 	reader := bufio.NewReader(os.Stdin)
 	response, err := reader.ReadString('\n')
 	if err != nil {
@@ -121,6 +121,7 @@ func (m *Manager) ConfirmWithOptions(message string, options map[string]string) 
 		fmt.Printf("  [%s] %s\n", key, desc)
 		keys = append(keys, key)
 	}
+	_ = keys // keys variable is used for potential future functionality
 	fmt.Print("Choose: ")
 
 	reader := bufio.NewReader(os.Stdin)
@@ -130,7 +131,7 @@ func (m *Manager) ConfirmWithOptions(message string, options map[string]string) 
 	}
 
 	response = strings.TrimSpace(strings.ToLower(response))
-	
+
 	// Check if response is valid
 	if _, exists := options[response]; !exists {
 		return "", fmt.Errorf("invalid option: %s", response)
@@ -204,7 +205,7 @@ func (t *Table) Render() {
 
 	// Print headers
 	t.printRow(t.headers, widths, true)
-	
+
 	// Print separator
 	separator := make([]string, len(t.headers))
 	for i, width := range widths {
@@ -274,12 +275,12 @@ func (pb *ProgressBar) render() {
 	filled := int(percent * float64(pb.width))
 
 	bar := strings.Repeat("█", filled) + strings.Repeat("░", pb.width-filled)
-	
+
 	if pb.manager.colors {
-		fmt.Printf("\r%s[%s]%s %.1f%% (%d/%d)", 
+		fmt.Printf("\r%s[%s]%s %.1f%% (%d/%d)",
 			Blue, bar, Reset, percent*100, pb.current, pb.total)
 	} else {
-		fmt.Printf("\r[%s] %.1f%% (%d/%d)", 
+		fmt.Printf("\r[%s] %.1f%% (%d/%d)",
 			bar, percent*100, pb.current, pb.total)
 	}
 

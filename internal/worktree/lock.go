@@ -17,14 +17,14 @@ import (
 
 // OperationLock provides file-based locking for worktree operations
 type OperationLock struct {
-	lockPath    string
-	lockFile    *os.File
-	pid         int
-	operation   string
-	acquired    bool
-	timeout     time.Duration
-	mu          sync.Mutex
-	retryDelay  time.Duration
+	lockPath   string
+	lockFile   *os.File
+	pid        int
+	operation  string
+	acquired   bool
+	timeout    time.Duration
+	mu         sync.Mutex
+	retryDelay time.Duration
 }
 
 // LockType represents different types of operations that can be locked
@@ -32,7 +32,7 @@ type LockType string
 
 const (
 	LockTypeCreate  LockType = "create"
-	LockTypeDelete  LockType = "delete" 
+	LockTypeDelete  LockType = "delete"
 	LockTypeMerge   LockType = "merge"
 	LockTypeSwitch  LockType = "switch"
 	LockTypeCleanup LockType = "cleanup"
@@ -65,10 +65,10 @@ func (lm *LockManager) AcquireLock(lockType LockType, targetPath string, timeout
 
 	// Create a unique lock key based on the target path and operation type
 	lockKey := generateLockKey(string(lockType), targetPath)
-	
+
 	// Check if we already have this lock
 	if existingLock, exists := lm.locks[lockKey]; exists && existingLock.acquired {
-		return nil, types.NewValidationError("acquire-lock", 
+		return nil, types.NewValidationError("acquire-lock",
 			fmt.Sprintf("lock already acquired for %s on %s", lockType, targetPath), nil)
 	}
 
@@ -131,7 +131,7 @@ func (lm *LockManager) ReleaseAll() error {
 // newOperationLock creates a new operation lock
 func newOperationLock(lockDir, lockKey, operation string, timeout time.Duration) (*OperationLock, error) {
 	lockPath := filepath.Join(lockDir, lockKey+".lock")
-	
+
 	return &OperationLock{
 		lockPath:   lockPath,
 		pid:        os.Getpid(),
@@ -158,18 +158,18 @@ func (ol *OperationLock) acquire() error {
 			// Successfully created the lock file
 			ol.lockFile = file
 			ol.acquired = true
-			
+
 			// Write lock information to the file
-			lockInfo := fmt.Sprintf("pid=%d\noperation=%s\ntime=%s\n", 
+			lockInfo := fmt.Sprintf("pid=%d\noperation=%s\ntime=%s\n",
 				ol.pid, ol.operation, time.Now().Format(time.RFC3339))
-			
+
 			if _, writeErr := file.WriteString(lockInfo); writeErr != nil {
 				// Clean up on write failure
-				file.Close()
-				os.Remove(ol.lockPath)
+				_ = file.Close()           // Ignore close error in cleanup path
+				_ = os.Remove(ol.lockPath) // Ignore remove error in cleanup path
 				return fmt.Errorf("failed to write lock info: %w", writeErr)
 			}
-			
+
 			_ = file.Sync() // Force write to disk
 			return nil
 		}
@@ -186,7 +186,7 @@ func (ol *OperationLock) acquire() error {
 				return types.NewValidationError("acquire-lock-timeout",
 					fmt.Sprintf("timeout waiting for lock (held by %s)", lockInfo), err)
 			}
-			return types.NewValidationError("acquire-lock-timeout", 
+			return types.NewValidationError("acquire-lock-timeout",
 				"timeout waiting for lock", err)
 		}
 
@@ -274,14 +274,14 @@ func generateLockKey(operation, targetPath string) string {
 	// Create a hash of the target path to handle long paths and special characters
 	hash := sha256.Sum256([]byte(targetPath))
 	pathHash := fmt.Sprintf("%x", hash[:8]) // Use first 8 bytes of hash
-	
+
 	return fmt.Sprintf("wtree-%s-%s", operation, pathHash)
 }
 
 // getLockDirectory returns the directory to use for lock files
 func getLockDirectory() (string, error) {
 	var lockDir string
-	
+
 	if runtime.GOOS == "windows" {
 		lockDir = filepath.Join(os.TempDir(), "wtree-locks")
 	} else {
@@ -291,7 +291,7 @@ func getLockDirectory() (string, error) {
 	if err := os.MkdirAll(lockDir, 0755); err != nil {
 		return "", err
 	}
-	
+
 	return lockDir, nil
 }
 
@@ -315,7 +315,7 @@ func processExistsUnix(pid int) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	// Send signal 0 to check if process exists
 	err = process.Signal(syscall.Signal(0))
 	return err == nil
@@ -327,12 +327,12 @@ func processExistsWindows(pid int) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	// On Windows, FindProcess always succeeds, so we need to check differently
 	state, err := process.Wait()
 	if err != nil {
 		return true // Process still running
 	}
-	
+
 	return !state.Exited()
 }

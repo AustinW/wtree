@@ -25,10 +25,10 @@ Examples:
 		}
 
 		sourceBranch := args[0]
-		
+
 		// Get flag values
 		message, _ := cmd.Flags().GetString("message")
-		
+
 		options := worktree.MergeOptions{
 			Message: message,
 			Force:   force,

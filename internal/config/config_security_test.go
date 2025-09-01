@@ -18,7 +18,11 @@ func TestManager_PathTraversalValidation(t *testing.T) {
 	// Create temporary directory structure for testing
 	tmpDir, err := os.MkdirTemp("", "wtree-config-security")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	tests := []struct {
 		name        string
@@ -168,7 +172,11 @@ func TestManager_PathTraversalValidation(t *testing.T) {
 func TestManager_ProjectConfigSecurityValidation(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "wtree-project-validation")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	manager := NewManager()
 
@@ -236,8 +244,8 @@ func TestManager_ProjectConfigSecurityValidation(t *testing.T) {
 			config: &types.ProjectConfig{
 				Version: "1.0",
 				CopyFiles: []string{
-					"*.json",      // Safe
-					"../secrets",  // Malicious!
+					"*.json",     // Safe
+					"../secrets", // Malicious!
 				},
 			},
 			expectError: true,
@@ -249,7 +257,7 @@ func TestManager_ProjectConfigSecurityValidation(t *testing.T) {
 				Version: "1.0",
 				CopyFiles: []string{
 					"file.txt",
-					"",  // Empty pattern
+					"", // Empty pattern
 					"other.txt",
 				},
 			},
@@ -265,8 +273,8 @@ func TestManager_ProjectConfigSecurityValidation(t *testing.T) {
 			if tt.expectError {
 				assert.Error(t, err, "Expected error for config: %s", tt.description)
 				// Check that it's specifically a validation error
-				assert.True(t, strings.Contains(err.Error(), "invalid file pattern") || 
-						   strings.Contains(err.Error(), "validation"), 
+				assert.True(t, strings.Contains(err.Error(), "invalid file pattern") ||
+					strings.Contains(err.Error(), "validation"),
 					"Should be a validation error: %v", err)
 			} else {
 				assert.NoError(t, err, "Expected no error for config: %s", tt.description)
@@ -279,7 +287,11 @@ func TestManager_ProjectConfigSecurityValidation(t *testing.T) {
 func TestManager_SymlinkInRepoPath(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "wtree-symlink-repo")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	// Create actual repository directory
 	realRepoDir := filepath.Join(tmpDir, "real-repo")
@@ -304,7 +316,11 @@ func TestManager_SymlinkInRepoPath(t *testing.T) {
 func TestManager_ConcurrentValidation(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "wtree-concurrent")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	manager := NewManager()
 
@@ -313,7 +329,7 @@ func TestManager_ConcurrentValidation(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		go func(id int) {
 			defer func() { done <- true }()
-			
+
 			// Mix of safe and unsafe patterns
 			patterns := []string{
 				"config.json",
@@ -321,7 +337,7 @@ func TestManager_ConcurrentValidation(t *testing.T) {
 				"src/components/*.tsx",
 				"/absolute/path",
 			}
-			
+
 			for _, pattern := range patterns {
 				_ = manager.validateFilePattern(pattern, tmpDir)
 			}
@@ -341,7 +357,11 @@ func TestManager_ConcurrentValidation(t *testing.T) {
 func TestManager_EdgeCasePatterns(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "wtree-edge-cases")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	manager := NewManager()
 
@@ -398,10 +418,14 @@ func TestManager_EdgeCasePatterns(t *testing.T) {
 func BenchmarkPathValidation(b *testing.B) {
 	tmpDir, err := os.MkdirTemp("", "wtree-benchmark")
 	require.NoError(b, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			b.Logf("Warning: failed to clean up temp dir: %v", err)
+		}
+	}()
 
 	manager := NewManager()
-	
+
 	testPatterns := []string{
 		"simple.txt",
 		"src/components/Button.tsx",

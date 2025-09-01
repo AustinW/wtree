@@ -28,14 +28,14 @@ func (fm *FileManager) SetBasePath(basePath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to resolve base path: %w", err)
 	}
-	
+
 	// Resolve symlinks in the base path to get canonical path
 	canonical, err := filepath.EvalSymlinks(abs)
 	if err != nil {
 		log.Printf("Warning: Could not resolve symlinks in base path %s: %v", abs, err)
 		canonical = abs // Use absolute path if symlink resolution fails
 	}
-	
+
 	fm.allowedBasePath = canonical
 	return nil
 }
@@ -78,7 +78,7 @@ func (fm *FileManager) LinkFiles(patterns []string, srcDir, dstDir string, ignor
 func (fm *FileManager) copyPattern(pattern, srcDir, dstDir string, ignorePatterns []string) error {
 	// Get absolute pattern path
 	patternPath := filepath.Join(srcDir, pattern)
-	
+
 	// Find all matching files
 	matches, err := filepath.Glob(patternPath)
 	if err != nil {
@@ -137,7 +137,7 @@ func (fm *FileManager) copyPattern(pattern, srcDir, dstDir string, ignorePattern
 func (fm *FileManager) linkPattern(pattern, srcDir, dstDir string, ignorePatterns []string) error {
 	// Get absolute pattern path
 	patternPath := filepath.Join(srcDir, pattern)
-	
+
 	// Find all matching files
 	matches, err := filepath.Glob(patternPath)
 	if err != nil {
@@ -239,7 +239,7 @@ func (fm *FileManager) copyFile(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create destination file %s: %w", dst, err)
 	}
-	
+
 	// Track if operation completed successfully
 	var success bool
 	defer func() {
@@ -354,20 +354,20 @@ func (fm *FileManager) ValidateFilePatterns(patterns []string) error {
 func (fm *FileManager) validatePattern(pattern string) error {
 	// Check for absolute paths
 	if filepath.IsAbs(pattern) {
-		return types.NewValidationError("file-pattern", 
+		return types.NewValidationError("file-pattern",
 			"file patterns cannot be absolute paths", nil)
 	}
 
 	// Check for path traversal attempts
 	if strings.Contains(pattern, "..") {
-		return types.NewValidationError("file-pattern", 
+		return types.NewValidationError("file-pattern",
 			"file patterns cannot contain '..' for security", nil)
 	}
 
 	// Clean the path and check if it's the same
 	cleaned := filepath.Clean(pattern)
 	if cleaned != pattern && cleaned != "./"+pattern {
-		return types.NewValidationError("file-pattern", 
+		return types.NewValidationError("file-pattern",
 			"file pattern contains suspicious path elements", nil)
 	}
 
@@ -387,13 +387,13 @@ func (fm *FileManager) validatePathSecurity(srcPath, operation string) error {
 	// Check if source is a symbolic link
 	if fileInfo.Mode()&os.ModeSymlink != 0 {
 		log.Printf("Security check: Found symlink at %s during %s operation", srcPath, operation)
-		
+
 		// Resolve the symlink target
 		target, err := filepath.EvalSymlinks(srcPath)
 		if err != nil {
 			return fmt.Errorf("cannot resolve symlink %s: %w", srcPath, err)
 		}
-		
+
 		// Validate that symlink target is within allowed boundaries
 		if err := fm.validatePathBounds(target, "symlink target"); err != nil {
 			log.Printf("Security violation: Symlink %s points outside allowed directory: %s -> %s", srcPath, srcPath, target)

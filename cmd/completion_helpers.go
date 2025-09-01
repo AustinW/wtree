@@ -48,4 +48,3 @@ func completeExistingWorktrees(cmd *cobra.Command, args []string, toComplete str
 
 	return branches, cobra.ShellCompDirectiveNoFileComp
 }
-
