@@ -47,6 +47,21 @@ func NewManager(repo git.Repository, configMgr *config.Manager, ui *ui.Manager) 
 	}
 }
 
+// GetRepository returns the git repository
+func (m *Manager) GetRepository() git.Repository {
+	return m.repo
+}
+
+// GetConfigManager returns the configuration manager
+func (m *Manager) GetConfigManager() *config.Manager {
+	return m.configMgr
+}
+
+// GetUIManager returns the UI manager
+func (m *Manager) GetUIManager() *ui.Manager {
+	return m.ui
+}
+
 // Initialize loads configurations and validates the setup
 func (m *Manager) Initialize() error {
 	var err error

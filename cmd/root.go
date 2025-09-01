@@ -6,8 +6,10 @@ import (
 
 	"github.com/awhite/wtree/internal/config"
 	"github.com/awhite/wtree/internal/git"
+	"github.com/awhite/wtree/internal/plugin"
 	"github.com/awhite/wtree/internal/ui"
 	"github.com/awhite/wtree/internal/worktree"
+	"github.com/awhite/wtree/pkg/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -50,6 +52,14 @@ Examples:
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() error {
+	// Initialize plugins if not in plugin management mode
+	if err := initializePlugins(); err != nil {
+		// Log warning but don't fail startup
+		if verbose {
+			fmt.Fprintf(os.Stderr, "Warning: plugin initialization failed: %v\n", err)
+		}
+	}
+	
 	return rootCmd.Execute()
 }
 
@@ -115,4 +125,54 @@ func setupManager() (*worktree.Manager, error) {
 	}
 
 	return manager, nil
+}
+
+// Global plugin manager instance
+var globalPluginManager *plugin.Manager
+
+// initializePlugins initializes the plugin system
+func initializePlugins() error {
+	// Skip plugin initialization if we're running plugin commands
+	// to avoid circular dependencies
+	if len(os.Args) > 1 && os.Args[1] == "plugin" {
+		return nil
+	}
+	
+	// Setup core wtree components
+	wtreeManager, err := setupManager()
+	if err != nil {
+		return fmt.Errorf("failed to setup wtree manager: %w", err)
+	}
+
+	// Create plugin context
+	pluginCtx := &types.PluginContext{
+		WorktreeManager: wtreeManager,
+		GitRepo:         wtreeManager.GetRepository(),
+		ConfigManager:   wtreeManager.GetConfigManager(),
+		UIManager:       wtreeManager.GetUIManager(),
+		PluginData:      make(map[string]interface{}),
+	}
+
+	// Get plugin directories
+	pluginDirs := plugin.GetDefaultPluginDirs()
+
+	// Create plugin manager
+	globalPluginManager = plugin.NewManager(pluginCtx, pluginDirs)
+
+	// Initialize plugin manager
+	if err := globalPluginManager.Initialize(); err != nil {
+		return fmt.Errorf("failed to initialize plugin manager: %w", err)
+	}
+
+	// Register plugin commands with the root command
+	if err := globalPluginManager.RegisterCommands(rootCmd); err != nil {
+		return fmt.Errorf("failed to register plugin commands: %w", err)
+	}
+
+	return nil
+}
+
+// GetPluginManager returns the global plugin manager instance
+func GetPluginManager() *plugin.Manager {
+	return globalPluginManager
 }
