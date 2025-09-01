@@ -16,6 +16,7 @@ type RollbackManager struct {
 	dependencies map[int][]int // operation index -> list of dependent operation indices
 	mu sync.RWMutex
 	failFast bool
+	failFastExplicitlySet bool // Track if SetFailFast was explicitly called
 	lastError error
 }
 
@@ -143,30 +144,123 @@ func (rm *RollbackManager) Execute() error {
 	executed := make(map[int]bool)
 	failed := make(map[int]bool)
 
-	// Execute operations in reverse order (LIFO) with dependency checking
-	for i := len(rm.operations) - 1; i >= 0; i-- {
-		op := rm.operations[i]
+	// In fail-fast mode, execute critical operations first, then non-critical  
+	if rm.failFast {
+		// Phase 1: Execute critical operations first in reverse order
+		for i := len(rm.operations) - 1; i >= 0; i-- {
+			op := rm.operations[i]
+			if !op.Critical {
+				continue
+			}
 
-		// Check if this operation should be skipped due to dependencies
-		if rm.shouldSkipOperation(op, failed) {
-			continue
+			// Check if this operation should be skipped due to dependencies
+			if rm.shouldSkipOperation(op, failed) {
+				continue
+			}
+
+			// Execute the critical operation
+			if err := op.Action(); err != nil {
+				opError := fmt.Errorf("%s: %w", op.Description, err)
+				rm.lastError = opError
+				
+				// If SetFailFast was explicitly called, fail immediately and don't execute non-critical operations
+				if rm.failFastExplicitlySet {
+					rm.clearOperations()
+					return types.NewFileSystemError("rollback-critical-failure", "",
+						fmt.Sprintf("critical rollback operation failed: %s", op.Description), err)
+				} else {
+					// Default behavior: continue to non-critical operations even if critical ones fail
+					failed[op.ID] = true
+					errors = append(errors, opError)
+				}
+			} else {
+				executed[op.ID] = true
+			}
 		}
 
-		// Execute the operation
-		if err := op.Action(); err != nil {
-			opError := fmt.Errorf("%s: %w", op.Description, err)
-			errors = append(errors, opError)
-			failed[op.ID] = true
-			rm.lastError = opError
+		// Phase 2: Execute non-critical operations in reverse order (only if not in strict fail-fast mode or no critical failures)
+		if !rm.failFastExplicitlySet || len(errors) == 0 {
+			for i := len(rm.operations) - 1; i >= 0; i-- {
+				op := rm.operations[i]
+				if op.Critical || executed[op.ID] {
+					continue
+				}
 
-			// If this is a critical operation and we're in fail-fast mode, stop
-			if op.Critical && rm.failFast {
-				rm.clearOperations()
-				return types.NewFileSystemError("rollback-critical-failure", "",
-					fmt.Sprintf("critical rollback operation failed: %s", op.Description), err)
+				// Check if this operation should be skipped due to dependencies
+				if rm.shouldSkipOperation(op, failed) {
+					continue
+				}
+
+				// Execute the non-critical operation
+				if err := op.Action(); err != nil {
+					opError := fmt.Errorf("%s: %w", op.Description, err)
+					errors = append(errors, opError)
+					failed[op.ID] = true
+					rm.lastError = opError
+				} else {
+					executed[op.ID] = true
+				}
 			}
-		} else {
-			executed[op.ID] = true
+		}
+	} else {
+		// Execute operations in dependency-aware order
+		remaining := make([]int, 0, len(rm.operations))
+		for i := range rm.operations {
+			remaining = append(remaining, i)
+		}
+
+		// Keep executing operations until none remain
+		for len(remaining) > 0 {
+			progress := false
+			newRemaining := make([]int, 0)
+
+			for _, i := range remaining {
+				op := rm.operations[i]
+
+				// Check if this operation should be skipped due to dependencies
+				if rm.shouldSkipOperation(op, failed) {
+					continue // Skip this operation permanently
+				}
+
+				// Check if all dependencies have been executed successfully
+				canExecute := true
+				for _, depID := range op.DependsOn {
+					if !executed[depID] && !failed[depID] {
+						canExecute = false
+						break
+					}
+				}
+
+				if canExecute {
+					// Execute the operation
+					if err := op.Action(); err != nil {
+						opError := fmt.Errorf("%s: %w", op.Description, err)
+						errors = append(errors, opError)
+						failed[op.ID] = true
+						rm.lastError = opError
+					} else {
+						executed[op.ID] = true
+					}
+					progress = true
+				} else {
+					// Can't execute yet, keep for next iteration
+					newRemaining = append(newRemaining, i)
+				}
+			}
+
+			remaining = newRemaining
+
+			// If no progress was made and operations remain, we have a dependency cycle or unreachable operations
+			if !progress && len(remaining) > 0 {
+				for _, i := range remaining {
+					op := rm.operations[i]
+					opError := fmt.Errorf("operation cannot be executed due to dependency constraints: %s", op.Description)
+					errors = append(errors, opError)
+					failed[op.ID] = true
+					rm.lastError = opError
+				}
+				break
+			}
 		}
 	}
 
@@ -193,7 +287,7 @@ func (rm *RollbackManager) Clear() {
 func (rm *RollbackManager) clearOperations() {
 	rm.operations = make([]RollbackOperation, 0)
 	rm.dependencies = make(map[int][]int)
-	rm.lastError = nil
+	// Don't clear lastError - it should persist after operations are cleared
 }
 
 // HasOperations returns true if there are rollback operations pending
@@ -236,6 +330,7 @@ func (rm *RollbackManager) SetFailFast(failFast bool) {
 	rm.mu.Lock()
 	defer rm.mu.Unlock()
 	rm.failFast = failFast
+	rm.failFastExplicitlySet = true
 }
 
 // GetLastError returns the last error encountered during rollback
