@@ -219,7 +219,8 @@ func (m *Manager) validateFilePattern(pattern, repoPath string) error {
 	// We need to distinguish between legitimate dots in filenames vs path traversal
 	if strings.Contains(pattern, "../") || pattern == ".." || strings.HasPrefix(pattern, "../") {
 		// This contains actual path traversal syntax, do full validation
-		testPath := filepath.Join(repoPath, cleanedPattern)
+		// IMPORTANT: Use original pattern, not cleaned, to detect actual traversal attempts
+		testPath := filepath.Join(repoPath, pattern)
 		
 		// Get canonical (absolute, symlink-resolved) paths
 		repoAbs, err := filepath.Abs(repoPath)
