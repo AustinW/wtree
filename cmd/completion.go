@@ -54,8 +54,9 @@ PowerShell:
 			return rootCmd.GenFishCompletion(os.Stdout, true)
 		case "powershell":
 			return rootCmd.GenPowerShellCompletion(os.Stdout)
+		default:
+			return nil
 		}
-		return nil
 	},
 }
 
