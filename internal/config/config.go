@@ -209,6 +209,15 @@ func (m *Manager) validateFilePattern(pattern, repoPath string) error {
 	if strings.HasPrefix(cleanedPattern, "../") || strings.Contains(cleanedPattern, "/../") || cleanedPattern == ".." {
 		return fmt.Errorf("file pattern cannot escape project directory")
 	}
+	
+	// Enhanced check: scan path segments for .. components before any cleaning/joining
+	// This catches cases like "normal/../file.txt" that might be missed by other checks
+	pathSegments := strings.Split(pattern, string(filepath.Separator))
+	for _, segment := range pathSegments {
+		if segment == ".." {
+			return fmt.Errorf("file pattern cannot contain directory traversal (..) components")
+		}
+	}
 
 	// Check for Windows-style absolute paths
 	if len(pattern) >= 3 && pattern[1] == ':' && (pattern[2] == '\\' || pattern[2] == '/') {
