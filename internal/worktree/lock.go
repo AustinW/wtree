@@ -79,7 +79,7 @@ func (lm *LockManager) AcquireLock(lockType LockType, targetPath string, timeout
 
 	// Attempt to acquire the lock
 	if err := lock.acquire(); err != nil {
-		lock.cleanup()
+		_ = lock.cleanup()
 		return nil, fmt.Errorf("failed to acquire lock: %w", err)
 	}
 
@@ -169,7 +169,7 @@ func (ol *OperationLock) acquire() error {
 				return fmt.Errorf("failed to write lock info: %w", writeErr)
 			}
 			
-			file.Sync() // Force write to disk
+			_ = file.Sync() // Force write to disk
 			return nil
 		}
 

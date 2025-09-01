@@ -14,7 +14,7 @@ import (
 func TestLockManager_Basic(t *testing.T) {
 	lm, err := NewLockManager()
 	require.NoError(t, err)
-	defer lm.ReleaseAll()
+	defer func() { _ = lm.ReleaseAll() }()
 
 	targetPath := "/test/path"
 	timeout := 5 * time.Second
@@ -37,14 +37,14 @@ func TestLockManager_Basic(t *testing.T) {
 	// Should be able to acquire again after release
 	lock2, err := lm.AcquireLock(LockTypeCreate, targetPath, timeout)
 	require.NoError(t, err)
-	defer lm.ReleaseLock(lock2)
+	defer func() { _ = lm.ReleaseLock(lock2) }()
 	assert.True(t, lock2.acquired)
 }
 
 func TestLockManager_DifferentOperationsCanCoexist(t *testing.T) {
 	lm, err := NewLockManager()
 	require.NoError(t, err)
-	defer lm.ReleaseAll()
+	defer func() { _ = lm.ReleaseAll() }()
 
 	targetPath := "/test/path"
 	timeout := 5 * time.Second
@@ -52,12 +52,12 @@ func TestLockManager_DifferentOperationsCanCoexist(t *testing.T) {
 	// Acquire create lock
 	createLock, err := lm.AcquireLock(LockTypeCreate, targetPath, timeout)
 	require.NoError(t, err)
-	defer lm.ReleaseLock(createLock)
+	defer func() { _ = lm.ReleaseLock(createLock) }()
 
 	// Acquire delete lock on same path - should succeed as it's different operation
 	deleteLock, err := lm.AcquireLock(LockTypeDelete, targetPath, timeout)
 	require.NoError(t, err)
-	defer lm.ReleaseLock(deleteLock)
+	defer func() { _ = lm.ReleaseLock(deleteLock) }()
 
 	assert.True(t, createLock.acquired)
 	assert.True(t, deleteLock.acquired)
@@ -66,7 +66,7 @@ func TestLockManager_DifferentOperationsCanCoexist(t *testing.T) {
 func TestLockManager_ConcurrentAccess(t *testing.T) {
 	lm, err := NewLockManager()
 	require.NoError(t, err)
-	defer lm.ReleaseAll()
+	defer func() { _ = lm.ReleaseAll() }()
 
 	targetPath := "/test/concurrent"
 	timeout := 2 * time.Second
@@ -98,7 +98,7 @@ func TestLockManager_ConcurrentAccess(t *testing.T) {
 			// Hold lock briefly
 			time.Sleep(50 * time.Millisecond)
 			
-			lm.ReleaseLock(lock)
+			_ = lm.ReleaseLock(lock)
 		}()
 	}
 
@@ -112,18 +112,18 @@ func TestLockManager_ConcurrentAccess(t *testing.T) {
 func TestLockManager_Timeout(t *testing.T) {
 	lm1, err := NewLockManager()
 	require.NoError(t, err)
-	defer lm1.ReleaseAll()
+	defer func() { _ = lm1.ReleaseAll() }()
 
 	lm2, err := NewLockManager()
 	require.NoError(t, err)
-	defer lm2.ReleaseAll()
+	defer func() { _ = lm2.ReleaseAll() }()
 
 	targetPath := "/test/timeout"
 	
 	// First manager acquires lock
 	lock1, err := lm1.AcquireLock(LockTypeCreate, targetPath, 5*time.Second)
 	require.NoError(t, err)
-	defer lm1.ReleaseLock(lock1)
+	defer func() { _ = lm1.ReleaseLock(lock1) }()
 
 	// Second manager tries to acquire with short timeout
 	start := time.Now()
@@ -144,13 +144,13 @@ func TestLockManager_Timeout(t *testing.T) {
 func TestLockManager_LockFileContent(t *testing.T) {
 	lm, err := NewLockManager()
 	require.NoError(t, err)
-	defer lm.ReleaseAll()
+	defer func() { _ = lm.ReleaseAll() }()
 
 	targetPath := "/test/lockfile-content"
 	
 	lock, err := lm.AcquireLock(LockTypeCreate, targetPath, 5*time.Second)
 	require.NoError(t, err)
-	defer lm.ReleaseLock(lock)
+	defer func() { _ = lm.ReleaseLock(lock) }()
 
 	// Check that lock file exists and has correct content
 	assert.FileExists(t, lock.lockPath)
@@ -241,7 +241,7 @@ func TestLockManager_StresTest(t *testing.T) {
 
 	lm, err := NewLockManager()
 	require.NoError(t, err)
-	defer lm.ReleaseAll()
+	defer func() { _ = lm.ReleaseAll() }()
 
 	numWorkers := 50
 	numOperations := 100
@@ -266,7 +266,7 @@ func TestLockManager_StresTest(t *testing.T) {
 					// Simulate some work
 					time.Sleep(time.Microsecond)
 					
-					lm.ReleaseLock(lock)
+					_ = lm.ReleaseLock(lock)
 				}
 			}
 		}(i)

@@ -52,7 +52,7 @@ func init() {
 	createCmd.Flags().BoolP("open", "o", false, "open in editor after creation")
 	
 	// Register completion for the --from flag
-	createCmd.RegisterFlagCompletionFunc("from", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = createCmd.RegisterFlagCompletionFunc("from", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		manager, err := setupManager()
 		if err != nil {
 			return nil, cobra.ShellCompDirectiveError

@@ -129,7 +129,7 @@ func (pm *PRManager) CreatePRWorktree(prNumber int, options PRWorktreeOptions) e
 	if err := pm.handleFileOperations(worktreePath); err != nil {
 		pm.ui.Warning("File operations failed: %v", err)
 		pm.ui.Warning("Rolling back PR worktree creation")
-		pm.rollback.Execute()
+		_ = pm.rollback.Execute()
 		return fmt.Errorf("file operations failed: %w", err)
 	}
 

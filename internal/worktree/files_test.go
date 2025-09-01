@@ -65,7 +65,7 @@ func TestFileManager_CopyFiles(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clean destination
 			os.RemoveAll(dstDir)
-			os.MkdirAll(dstDir, 0755)
+			_ = os.MkdirAll(dstDir, 0755)
 
 			err := fm.CopyFiles(tt.patterns, srcDir, dstDir, tt.ignorePatterns)
 			

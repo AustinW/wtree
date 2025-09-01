@@ -323,7 +323,7 @@ func TestManager_ConcurrentValidation(t *testing.T) {
 			}
 			
 			for _, pattern := range patterns {
-				manager.validateFilePattern(pattern, tmpDir)
+				_ = manager.validateFilePattern(pattern, tmpDir)
 			}
 		}(i)
 	}
@@ -413,7 +413,7 @@ func BenchmarkPathValidation(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, pattern := range testPatterns {
-			manager.validateFilePattern(pattern, tmpDir)
+			_ = manager.validateFilePattern(pattern, tmpDir)
 		}
 	}
 }

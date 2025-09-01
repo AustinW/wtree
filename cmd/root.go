@@ -22,9 +22,13 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var (
 	version = "dev"
-	commit  = "none"
-	date    = "unknown"
+	commit  = "none" // Set at build time
+	date    = "unknown" // Set at build time
 )
+
+// Use blank identifier to indicate these are intentionally unused for now
+var _ = commit
+var _ = date
 
 var rootCmd = &cobra.Command{
 	Use:     "wtree",

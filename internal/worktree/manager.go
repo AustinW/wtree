@@ -163,7 +163,7 @@ func (m *Manager) Create(branchName string, options CreateOptions) error {
 	if err := m.executeHooks(types.HookPreCreate, hookCtx); err != nil {
 		if branchCreated {
 			m.ui.Warning("Rolling back branch creation due to pre-create hook failure")
-			m.rollback.Execute()
+			_ = m.rollback.Execute()
 		}
 		return fmt.Errorf("pre-create hook failed: %w", err)
 	}
@@ -175,7 +175,7 @@ func (m *Manager) Create(branchName string, options CreateOptions) error {
 		progress.FailStep(1)
 		if branchCreated {
 			m.ui.Warning("Rolling back branch creation due to worktree creation failure")
-			m.rollback.Execute()
+			_ = m.rollback.Execute()
 		}
 		return fmt.Errorf("failed to create worktree: %w", err)
 	}
@@ -190,7 +190,7 @@ func (m *Manager) Create(branchName string, options CreateOptions) error {
 		progress.FailStep(2)
 		m.ui.Warning("File operations failed: %v", err)
 		m.ui.Warning("Rolling back worktree creation")
-		m.rollback.Execute()
+		_ = m.rollback.Execute()
 		return fmt.Errorf("file operations failed: %w", err)
 	}
 
@@ -478,7 +478,7 @@ func (m *Manager) Status(options StatusOptions) error {
 		}
 
 		// Display worktree header
-		header := fmt.Sprintf("%s", wt.Branch)
+		header := wt.Branch
 		if isCurrent {
 			header += " (current)"
 		}
